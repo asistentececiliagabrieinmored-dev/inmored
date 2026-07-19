@@ -73,6 +73,9 @@ export default function Inmuebles() {
                 Aprobaciones pendientes
               </a>
             )}
+            <a href="/inmuebles/carga-historica" className="btn-secondary" style={{ marginRight: 8 }}>
+              Cargar inmueble histórico
+            </a>
             <a href="/inmuebles/nueva-solicitud" className="btn-secondary">
               + Nueva solicitud de captación
             </a>
