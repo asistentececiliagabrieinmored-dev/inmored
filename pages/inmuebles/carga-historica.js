@@ -3,6 +3,9 @@ import { useRouter } from 'next/router';
 import { supabase } from '../../lib/supabaseClient';
 import { useUsuarioActual } from '../../lib/useUsuarioActual';
 
+const BUCKET = 'documentos';
+const ESTADOS_COMERCIALIZABLES = ['disponible', 'en_proceso'];
+
 export default function CargaHistorica() {
   const router = useRouter();
   const { cargando: cargandoUsuario, sesion, usuario } = useUsuarioActual();
@@ -10,6 +13,7 @@ export default function CargaHistorica() {
   const [tiposInmueble, setTiposInmueble] = useState([]);
   const [tiposTransaccion, setTiposTransaccion] = useState([]);
   const [zonas, setZonas] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
 
   // Propietario
   const [propietarioNombre, setPropietarioNombre] = useState('');
@@ -17,6 +21,7 @@ export default function CargaHistorica() {
   const [propietarioTelefono, setPropietarioTelefono] = useState('');
 
   // Inmueble
+  const [captadorId, setCaptadorId] = useState('');
   const [fechaCaptacion, setFechaCaptacion] = useState('');
   const [tipoInmuebleId, setTipoInmuebleId] = useState('');
   const [tipoTransaccionId, setTipoTransaccionId] = useState('');
@@ -40,6 +45,16 @@ export default function CargaHistorica() {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
   const [exito, setExito] = useState(false);
+  const [nuevoInmuebleId, setNuevoInmuebleId] = useState(null);
+  const [estadoGuardado, setEstadoGuardado] = useState('');
+
+  // Artes / copy post-creación (solo si el inmueble queda comercializable)
+  const [tipoArteNuevo, setTipoArteNuevo] = useState('resumen');
+  const [artesSubidos, setArtesSubidos] = useState([]);
+  const [subiendoArte, setSubiendoArte] = useState(false);
+  const [nuevoCopy, setNuevoCopy] = useState('');
+  const [copyGuardado, setCopyGuardado] = useState('');
+  const [guardandoCopy, setGuardandoCopy] = useState(false);
 
   useEffect(() => {
     if (cargandoUsuario) return;
@@ -50,13 +65,26 @@ export default function CargaHistorica() {
     cargarCatalogos();
   }, [cargandoUsuario, sesion]);
 
+  useEffect(() => {
+    if (usuario && !captadorId) {
+      setCaptadorId(String(usuario.id));
+    }
+  }, [usuario]);
+
   async function cargarCatalogos() {
     const { data: tiposInm } = await supabase.from('tipos_inmueble').select('id, nombre').order('id');
     const { data: tiposTrans } = await supabase.from('tipos_transaccion').select('id, nombre').order('id');
     const { data: zonasData } = await supabase.from('zonas').select('id, nombre').order('id');
+    const { data: usuariosData } = await supabase
+      .from('usuarios')
+      .select('id, nombre, rol:roles(nombre)')
+      .eq('activo', true)
+      .order('nombre');
+
     setTiposInmueble(tiposInm || []);
     setTiposTransaccion(tiposTrans || []);
     setZonas(zonasData || []);
+    setUsuarios(usuariosData || []);
   }
 
   async function handleSubmit(e) {
@@ -67,10 +95,13 @@ export default function CargaHistorica() {
       setError('Selecciona al menos el tipo de inmueble y el tipo de transacción.');
       return;
     }
+    if (!captadorId) {
+      setError('Selecciona quién captó originalmente este inmueble.');
+      return;
+    }
 
     setEnviando(true);
     try {
-      // 1. Propietario (si no se sabe el nombre, se registra como "Propietario no registrado")
       const { data: propietario, error: errorProp } = await supabase
         .from('propietarios')
         .insert({
@@ -82,12 +113,11 @@ export default function CargaHistorica() {
         .single();
       if (errorProp) throw errorProp;
 
-      // 2. Inmueble (sin pasar por solicitud/aprobación)
       const { data: inmueble, error: errorInm } = await supabase
         .from('inmuebles')
         .insert({
           propietario_id: propietario.id,
-          asesor_captador_id: usuario ? usuario.id : null,
+          asesor_captador_id: captadorId,
           fecha_creacion: fechaCaptacion || null,
           zona_id: zonaId || null,
           ubicacion,
@@ -107,7 +137,6 @@ export default function CargaHistorica() {
         .single();
       if (errorInm) throw errorInm;
 
-      // 3. Si ya se cerró (vendido/alquilado antes del sistema), registrar el cierre histórico
       if (yaCerrado) {
         const { data: cierre, error: errorCierre } = await supabase
           .from('cierres')
@@ -115,7 +144,7 @@ export default function CargaHistorica() {
             inmueble_id: inmueble.id,
             tipo_transaccion_id: tipoTransaccionId,
             tipo_cierre: 'carga_historica',
-            asesor_captador_id: usuario ? usuario.id : null,
+            asesor_captador_id: captadorId,
             precio_final: precioFinal || 0,
             comision_total: comisionTotal || 0,
             porcentaje_comision_pactado: porcentajeComision || null,
@@ -125,8 +154,6 @@ export default function CargaHistorica() {
           .single();
         if (errorCierre) throw errorCierre;
 
-        // Comisión registrada como un solo monto a la oficina (simplificado para datos históricos;
-        // si necesitas desglosar por asesor, se puede editar directo en la base de datos).
         const { error: errorComision } = await supabase.from('comisiones_detalle').insert({
           cierre_id: cierre.id,
           beneficiario_tipo: 'oficina',
@@ -136,11 +163,62 @@ export default function CargaHistorica() {
         if (errorComision) throw errorComision;
       }
 
+      setNuevoInmuebleId(inmueble.id);
+      setEstadoGuardado(estado);
       setExito(true);
     } catch (err) {
       setError(err.message || 'Ocurrió un error al guardar el registro histórico.');
     } finally {
       setEnviando(false);
+    }
+  }
+
+  async function handleSubirArte(file) {
+    if (!file || !nuevoInmuebleId) return;
+    setError('');
+    setSubiendoArte(true);
+    try {
+      const ruta = `inmuebles/${nuevoInmuebleId}/artes/${tipoArteNuevo}-${Date.now()}-${file.name}`;
+      const { error: errorUpload } = await supabase.storage.from(BUCKET).upload(ruta, file);
+      if (errorUpload) throw errorUpload;
+
+      const { data: urlPublica } = supabase.storage.from(BUCKET).getPublicUrl(ruta);
+
+      const { error: errorInsert } = await supabase.from('artes_inmueble').insert({
+        inmueble_id: nuevoInmuebleId,
+        url: urlPublica.publicUrl,
+        tipo: tipoArteNuevo,
+        autor_id: usuario ? usuario.id : null,
+      });
+      if (errorInsert) throw errorInsert;
+
+      setArtesSubidos((prev) => [...prev, { url: urlPublica.publicUrl, tipo: tipoArteNuevo }]);
+    } catch (err) {
+      setError(err.message || 'Error al subir el arte.');
+    } finally {
+      setSubiendoArte(false);
+    }
+  }
+
+  async function handleGuardarCopy(e) {
+    e.preventDefault();
+    if (!nuevoCopy.trim() || !nuevoInmuebleId) return;
+    setError('');
+    setGuardandoCopy(true);
+    try {
+      const { error: errorInsert } = await supabase.from('copy_redes').insert({
+        inmueble_id: nuevoInmuebleId,
+        texto: nuevoCopy,
+        autor_id: usuario ? usuario.id : null,
+      });
+      if (errorInsert) throw errorInsert;
+
+      setCopyGuardado(nuevoCopy);
+      setNuevoCopy('');
+    } catch (err) {
+      setError(err.message || 'Error al guardar el copy.');
+    } finally {
+      setGuardandoCopy(false);
     }
   }
 
@@ -165,7 +243,13 @@ export default function CargaHistorica() {
     setFechaCierre('');
     setPrecioFinal('');
     setComisionTotal('');
+    setArtesSubidos([]);
+    setCopyGuardado('');
+    setNuevoCopy('');
+    setNuevoInmuebleId(null);
     setExito(false);
+    // El captador se mantiene: si estás cargando varios inmuebles seguidos del mismo asesor,
+    // no hace falta volver a elegirlo cada vez.
   }
 
   if (cargandoUsuario) {
@@ -177,6 +261,8 @@ export default function CargaHistorica() {
   }
 
   if (exito) {
+    const esComercializable = ESTADOS_COMERCIALIZABLES.includes(estadoGuardado);
+
     return (
       <div>
         <div className="top-bar">
@@ -185,15 +271,80 @@ export default function CargaHistorica() {
         <div className="container">
           <div className="success-box">
             <h2>Registro histórico guardado</h2>
-            <p>El inmueble quedó cargado en el sistema con su información histórica.</p>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-              <button onClick={handleNuevoRegistro} style={{ width: 'auto' }}>
-                Cargar otro inmueble histórico
-              </button>
-              <a href="/inmuebles" className="btn-secondary">
-                Ver lista de inmuebles
-              </a>
+            <p>El inmueble #{nuevoInmuebleId} quedó cargado en el sistema con su información histórica.</p>
+          </div>
+
+          {esComercializable && (
+            <div className="card" style={{ marginTop: 16 }}>
+              <h3 style={{ color: '#06416A', marginTop: 0 }}>
+                Este inmueble sigue disponible — carga artes y copy
+              </h3>
+              <p className="solo-lectura-nota">
+                Como quedó como "{estadoGuardado === 'disponible' ? 'disponible' : 'en proceso'}",
+                conviene dejarlo listo para que cualquier asesor lo pueda consultar y publicar.
+              </p>
+
+              {error && <p className="error-text">{error}</p>}
+
+              <div className="form-section">
+                <h4 style={{ marginBottom: 8 }}>Artes para redes sociales</h4>
+                <div className="galeria">
+                  {artesSubidos.map((a, i) => (
+                    <div key={i} style={{ textAlign: 'center' }}>
+                      <span className="tag-tipo">{a.tipo}</span>
+                      <br />
+                      <img src={a.url} alt={`Arte ${a.tipo}`} />
+                    </div>
+                  ))}
+                </div>
+                <div className="form-row">
+                  <div>
+                    <label>Tipo de arte</label>
+                    <select value={tipoArteNuevo} onChange={(e) => setTipoArteNuevo(e.target.value)}>
+                      <option value="resumen">Resumen</option>
+                      <option value="apoyo">Apoyo</option>
+                    </select>
+                  </div>
+                  <div className="file-field" style={{ marginTop: 20 }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleSubirArte(e.target.files[0])}
+                      disabled={subiendoArte}
+                    />
+                    {subiendoArte && <p style={{ fontSize: 12 }}>Subiendo...</p>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-section">
+                <h4 style={{ marginBottom: 8 }}>Copy para redes sociales</h4>
+                {copyGuardado && (
+                  <p style={{ whiteSpace: 'pre-wrap', fontSize: 13, color: '#555' }}>
+                    Último guardado: {copyGuardado}
+                  </p>
+                )}
+                <form onSubmit={handleGuardarCopy}>
+                  <textarea
+                    value={nuevoCopy}
+                    onChange={(e) => setNuevoCopy(e.target.value)}
+                    placeholder="Texto pensado para el cliente..."
+                  />
+                  <button type="submit" disabled={guardandoCopy} style={{ width: 'auto' }}>
+                    {guardandoCopy ? 'Guardando...' : 'Guardar copy'}
+                  </button>
+                </form>
+              </div>
             </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 16 }}>
+            <button onClick={handleNuevoRegistro} style={{ width: 'auto' }}>
+              Cargar otro inmueble histórico
+            </button>
+            <a href="/inmuebles" className="btn-secondary">
+              Ver lista de inmuebles
+            </a>
           </div>
         </div>
       </div>
@@ -221,6 +372,22 @@ export default function CargaHistorica() {
           {error && <p className="error-text">{error}</p>}
 
           <div className="card">
+            <div className="form-section">
+              <h3>Captador</h3>
+              <label>¿Quién captó originalmente este inmueble?</label>
+              <select value={captadorId} onChange={(e) => setCaptadorId(e.target.value)} required>
+                <option value="">Selecciona...</option>
+                {usuarios.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.nombre} {u.rol?.nombre ? `(${u.rol.nombre})` : ''}
+                  </option>
+                ))}
+              </select>
+              <p className="solo-lectura-nota">
+                Puede ser distinto de quien está cargando este registro ahora.
+              </p>
+            </div>
+
             <div className="form-section">
               <h3>Datos del propietario</h3>
               <label>Nombre completo (si no lo sabes, déjalo en blanco)</label>
@@ -321,6 +488,12 @@ export default function CargaHistorica() {
                 <option value="en_proceso">En proceso</option>
                 <option value="cerrado">Cerrado (vendido/alquilado)</option>
               </select>
+              {ESTADOS_COMERCIALIZABLES.includes(estado) && (
+                <p className="solo-lectura-nota">
+                  Al guardar, te va a pedir cargar artes y copy, ya que este inmueble sigue
+                  siendo comercializable.
+                </p>
+              )}
             </div>
 
             <div className="form-section">

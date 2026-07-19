@@ -33,7 +33,8 @@ export default function Inmuebles() {
       const { data, error } = await supabase
         .from('inmuebles')
         .select(
-          'id, ubicacion, precio_venta, estado, zona_id, tipo_inmueble_id'
+          `id, ubicacion, precio_venta, estado, zona_id, tipo_inmueble_id,
+           captador:usuarios(nombre)`
         )
         .order('fecha_creacion', { ascending: false });
 
@@ -106,6 +107,9 @@ export default function Inmuebles() {
               {inmueble.precio_venta
                 ? `$us ${Number(inmueble.precio_venta).toLocaleString()}`
                 : 'Precio no definido'}
+            </p>
+            <p style={{ margin: '4px 0 0', color: '#888', fontSize: 12 }}>
+              Captador: {inmueble.captador?.nombre || '—'}
             </p>
           </a>
         ))}

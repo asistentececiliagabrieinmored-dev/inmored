@@ -54,7 +54,8 @@ export default function DetalleInmueble() {
          zona_id, dimensiones, dormitorios, banos, garajes, descripcion,
          tipo_inmueble:tipos_inmueble(nombre),
          tipo_transaccion:tipos_transaccion(nombre),
-         propietario:propietarios(nombre, telefono)`
+         propietario:propietarios(nombre, telefono),
+         captador:usuarios(nombre, email)`
       )
       .eq('id', id)
       .maybeSingle();
@@ -241,6 +242,7 @@ export default function DetalleInmueble() {
           <div className="form-section">
             <h3>Resumen</h3>
             <p><b>Propietario:</b> {inmueble.propietario?.nombre}</p>
+            <p><b>Captador:</b> {inmueble.captador?.nombre || inmueble.captador?.email || '—'}</p>
             <p><b>Dimensiones:</b> {inmueble.dimensiones || '—'}</p>
             <p>
               <b>Dormitorios:</b> {inmueble.dormitorios ?? '—'} ·{' '}
