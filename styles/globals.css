@@ -104,3 +104,94 @@ button:hover {
   font-size: 13px;
   text-decoration: underline;
 }
+
+select, textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  font-family: inherit;
+  background: white;
+}
+
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.form-section {
+  margin-bottom: 20px;
+}
+
+.form-section h3 {
+  color: #06416A;
+  font-size: 15px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 6px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  color: #444;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.file-field {
+  margin-bottom: 14px;
+}
+
+.file-field input[type="file"] {
+  width: 100%;
+  font-size: 13px;
+  padding: 8px;
+  border: 1px dashed #bbb;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.btn-secondary {
+  background: white;
+  color: #06416A;
+  border: 1px solid #06416A;
+  width: auto;
+  padding: 8px 16px;
+  display: inline-block;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.btn-secondary:hover {
+  background: #f0f6fa;
+}
+
+.success-box {
+  background: #eaf6ec;
+  border: 1px solid #b7e0bd;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+}
+
+.success-box h2 {
+  color: #1e7b34;
+  margin-top: 0;
+}
+
+.top-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+

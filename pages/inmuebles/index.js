@@ -54,7 +54,12 @@ export default function Inmuebles() {
       </div>
 
       <div className="container">
-        <h2>Inmuebles</h2>
+        <div className="top-actions">
+          <h2 style={{ margin: 0 }}>Inmuebles</h2>
+          <a href="/inmuebles/nueva-solicitud" className="btn-secondary">
+            + Nueva solicitud de captación
+          </a>
+        </div>
 
         {cargando && <p>Cargando...</p>}
 
