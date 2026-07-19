@@ -7,6 +7,7 @@ export default function Inmuebles() {
   const [inmuebles, setInmuebles] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [usuarioEmail, setUsuarioEmail] = useState('');
+  const [rolNombre, setRolNombre] = useState(null);
 
   useEffect(() => {
     async function cargarDatos() {
@@ -18,6 +19,16 @@ export default function Inmuebles() {
       }
 
       setUsuarioEmail(sessionData.session.user.email);
+
+      const { data: usuarioFila } = await supabase
+        .from('usuarios')
+        .select('rol:roles(nombre)')
+        .eq('email', sessionData.session.user.email)
+        .maybeSingle();
+
+      if (usuarioFila && usuarioFila.rol) {
+        setRolNombre(usuarioFila.rol.nombre);
+      }
 
       const { data, error } = await supabase
         .from('inmuebles')
@@ -56,9 +67,16 @@ export default function Inmuebles() {
       <div className="container">
         <div className="top-actions">
           <h2 style={{ margin: 0 }}>Inmuebles</h2>
-          <a href="/inmuebles/nueva-solicitud" className="btn-secondary">
-            + Nueva solicitud de captación
-          </a>
+          <div>
+            {rolNombre === 'gerente_operaciones' && (
+              <a href="/aprobaciones" className="btn-secondary" style={{ marginRight: 8 }}>
+                Aprobaciones pendientes
+              </a>
+            )}
+            <a href="/inmuebles/nueva-solicitud" className="btn-secondary">
+              + Nueva solicitud de captación
+            </a>
+          </div>
         </div>
 
         {cargando && <p>Cargando...</p>}
