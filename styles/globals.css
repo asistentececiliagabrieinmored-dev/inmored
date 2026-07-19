@@ -195,3 +195,34 @@ label {
   margin-bottom: 16px;
 }
 
+.galeria {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.galeria img {
+  width: 110px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.tag-tipo {
+  display: inline-block;
+  font-size: 11px;
+  background: #06416A;
+  color: white;
+  padding: 1px 8px;
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.solo-lectura-nota {
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+}
+

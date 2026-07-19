@@ -89,7 +89,12 @@ export default function Inmuebles() {
         )}
 
         {inmuebles.map((inmueble) => (
-          <div className="card" key={inmueble.id}>
+          <a
+            href={`/inmuebles/${inmueble.id}`}
+            className="card"
+            key={inmueble.id}
+            style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}
+          >
             <span className="badge">{inmueble.estado}</span>
             <p style={{ margin: '8px 0 4px', fontWeight: 500 }}>
               {inmueble.ubicacion || 'Sin ubicación registrada'}
@@ -99,7 +104,7 @@ export default function Inmuebles() {
                 ? `$us ${Number(inmueble.precio_venta).toLocaleString()}`
                 : 'Precio no definido'}
             </p>
-          </div>
+          </a>
         ))}
       </div>
     </div>
