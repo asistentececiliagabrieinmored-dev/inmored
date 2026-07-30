@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { supabase } from '../../lib/supabaseClient';
 import { useUsuarioActual } from '../../lib/useUsuarioActual';
 
-const BUCKET = 'documentos-privados';
+const BUCKET = 'documentos';
 const ESTADOS_COMERCIALIZABLES = ['disponible', 'en_proceso'];
 
 export default function CargaHistorica() {
