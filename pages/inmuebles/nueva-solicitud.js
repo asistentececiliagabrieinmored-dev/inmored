@@ -22,7 +22,7 @@ const DOCUMENTOS_POR_TRANSACCION = {
   ],
 };
 
-const BUCKET = 'documentos';
+const BUCKET = 'documentos-privados';
 
 export default function NuevaSolicitud() {
   const router = useRouter();
