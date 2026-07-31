@@ -259,9 +259,7 @@ export default function DetalleSolicitud() {
                 )}
               </p>
             ))}
-                </a>
-              </p>
-            ))}
+               
           </div>
 
           {observaciones.length > 0 && (
