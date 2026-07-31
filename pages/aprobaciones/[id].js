@@ -47,6 +47,7 @@ export default function DetalleSolicitud() {
       .select(
         `id, estado, fecha_envio, dimensiones, dormitorios, banos, garajes, descripcion,
          motivo_rechazo, propietario_id, tipo_inmueble_id, tipo_transaccion_id,
+         nombre_inmueble, ubicacion, precio_referencia,
          tipo_inmueble:tipos_inmueble(nombre),
          tipo_transaccion:tipos_transaccion(nombre),
          propietario:propietarios(nombre, ci, telefono),
@@ -95,6 +96,9 @@ export default function DetalleSolicitud() {
         banos: solicitud.banos,
         garajes: solicitud.garajes,
         descripcion: solicitud.descripcion,
+        nombre: solicitud.nombre_inmueble,
+        ubicacion: solicitud.ubicacion,
+        precio_venta: solicitud.precio_referencia,
         estado: 'disponible',
       });
       if (errorInmueble) throw errorInmueble;
