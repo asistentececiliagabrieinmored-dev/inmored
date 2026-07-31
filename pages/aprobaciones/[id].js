@@ -59,7 +59,15 @@ export default function DetalleSolicitud() {
       .from('documentos_solicitud')
       .select('id, tipo_documento, archivo_url, fecha_carga')
       .eq('solicitud_id', id);
-
+    
+      const documentosConUrl = await Promise.all(
+      (docs || []).map(async (doc) => {
+        const { data: firmada } = await supabase.storage
+          .from('documentos-privados')
+          .createSignedUrl(doc.archivo_url, 3600);
+        return { ...doc, url_temporal: firmada?.signedUrl || null };
+      })
+    );
     const { data: obs } = await supabase
       .from('observaciones_captacion')
       .select('id, observacion, ronda, fecha, gerente:usuarios(nombre)')
@@ -67,7 +75,7 @@ export default function DetalleSolicitud() {
       .order('fecha', { ascending: true });
 
     setSolicitud(sol);
-    setDocumentos(docs || []);
+    setDocumentos(documentosConUrl);
     setObservaciones(obs || []);
     setCargando(false);
   }
@@ -240,10 +248,17 @@ export default function DetalleSolicitud() {
           <div className="form-section">
             <h3>Documentos</h3>
             {documentos.length === 0 && <p>No se adjuntaron documentos.</p>}
-            {documentos.map((doc) => (
+             {documentos.map((doc) => (
               <p key={doc.id}>
-                <a href={doc.archivo_url} target="_blank" rel="noreferrer">
-                  {DOC_LABELS[doc.tipo_documento] || doc.tipo_documento}
+                {doc.url_temporal ? (
+                  <a href={doc.url_temporal} target="_blank" rel="noreferrer">
+                    {DOC_LABELS[doc.tipo_documento] || doc.tipo_documento}
+                  </a>
+                ) : (
+                  <span>{DOC_LABELS[doc.tipo_documento] || doc.tipo_documento} (no se pudo generar el enlace)</span>
+                )}
+              </p>
+            ))}
                 </a>
               </p>
             ))}
