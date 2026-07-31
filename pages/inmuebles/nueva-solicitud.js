@@ -33,6 +33,9 @@ export default function NuevaSolicitud() {
   const [tiposInmueble, setTiposInmueble] = useState([]);
   const [tiposTransaccion, setTiposTransaccion] = useState([]);
 
+  const [nombreInmueble, setNombreInmueble] = useState('');
+    const [ubicacion, setUbicacion] = useState('');
+    const [precioReferencia, setPrecioReferencia] = useState('');
   const [propietarioNombre, setPropietarioNombre] = useState('');
   const [propietarioCi, setPropietarioCi] = useState('');
   const [propietarioTelefono, setPropietarioTelefono] = useState('');
@@ -145,7 +148,10 @@ export default function NuevaSolicitud() {
           garajes: garajes || null,
           descripcion,
           estado: 'pendiente',
-          fecha_limite_revision: fechaLimite.toISOString(),
+        fecha_limite_revision: fechaLimite.toISOString(),
+        nombre_inmueble: nombreInmueble,
+        ubicacion,
+        precio_referencia: precioReferencia || null,
         })
         .select()
         .single();
@@ -239,7 +245,38 @@ export default function NuevaSolicitud() {
         <form onSubmit={handleSubmit}>
           {error && <p className="error-text">{error}</p>}
 
-          <div className="card">
+         <div className="card">
+            <div className="form-section">
+              <h3>Datos del inmueble (referencia)</h3>
+              <label>Nombre del inmueble</label>
+              <input
+                type="text"
+                value={nombreInmueble}
+                onChange={(e) => setNombreInmueble(e.target.value)}
+                placeholder="Ej: Casa Equipetrol, Depto Av. San Martín 3er anillo"
+                required
+              />
+              <div className="form-row">
+                <div>
+                  <label>Dirección</label>
+                  <input
+                    type="text"
+                    value={ubicacion}
+                    onChange={(e) => setUbicacion(e.target.value)}
+                    placeholder="Calle, zona, referencia"
+                  />
+                </div>
+                <div>
+                  <label>Precio inicial de referencia ($us)</label>
+                  <input
+                    type="number"
+                    value={precioReferencia}
+                    onChange={(e) => setPrecioReferencia(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="form-section">
               <h3>Datos del propietario</h3>
               <label>Nombre completo</label>
