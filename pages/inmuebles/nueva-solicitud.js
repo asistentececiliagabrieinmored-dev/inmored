@@ -174,7 +174,6 @@ export default function NuevaSolicitud() {
         if (errorUpload) {
           throw new Error(`Error al subir "${doc.label}": ${errorUpload.message}`);
         }
-
          const { error: errorDoc } = await supabase.from('documentos_solicitud').insert({
           solicitud_id: solicitud.id,
           tipo_documento: doc.tipo,
