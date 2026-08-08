@@ -97,3 +97,5 @@ Cuando quieras usar `www.inmored.com.bo` en vez de `inmored-web.vercel.app`,
 compras el dominio (paso con costo, ~US$ 20-30/año para `.com.bo`) y lo
 conectas en Vercel → Project → Settings → Domains. Ese paso lo hacemos
 cuando tú digas.
+
+<!-- Última verificación de migración a Claude Code: 2026-08-08 -->
