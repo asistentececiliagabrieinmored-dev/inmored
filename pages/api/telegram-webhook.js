@@ -276,6 +276,39 @@ async function procesarReferencia(usuario, chatId, mensaje) {
   );
 }
 
+async function manejarComando(chatId, texto, usuario) {
+  const comando = texto.split(/\s+/)[0].toLowerCase();
+
+  if (comando === '/ayuda' || comando === '/start') {
+    await enviarMensaje(
+      chatId,
+      'Hola 👋 Soy el bot de InmoRed.\n\n' +
+        (usuario?.telegram_activo
+          ? 'Ya tenés tu acceso activo. Reenviame los inmuebles que veas en los grupos de WhatsApp y los guardo automáticamente.'
+          : 'Para activar tu acceso, enviame el código de activación que te dio Romano.') +
+        '\n\nComandos disponibles:\n/ayuda — este mensaje\n/estado — ver si tu acceso está activo'
+    );
+    return;
+  }
+
+  if (comando === '/estado') {
+    const vigente =
+      usuario?.telegram_activo &&
+      usuario.telegram_acceso_hasta &&
+      new Date(usuario.telegram_acceso_hasta) > new Date();
+
+    await enviarMensaje(
+      chatId,
+      vigente
+        ? `Tu acceso está activo hasta el ${new Date(usuario.telegram_acceso_hasta).toLocaleDateString('es-BO')}.`
+        : 'Todavía no activaste tu acceso. Enviame el código de activación que te dio Romano.'
+    );
+    return;
+  }
+
+  await enviarMensaje(chatId, 'No reconozco ese comando. Escribí /ayuda para ver las opciones.');
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).end();
@@ -303,6 +336,12 @@ export default async function handler(req, res) {
       .select('id, nombre, telegram_activo, telegram_acceso_hasta')
       .eq('telegram_chat_id', chatId)
       .maybeSingle();
+
+    if (texto.startsWith('/')) {
+      await manejarComando(chatId, texto, usuario);
+      res.status(200).end();
+      return;
+    }
 
     const tieneAccesoVigente =
       usuario &&
