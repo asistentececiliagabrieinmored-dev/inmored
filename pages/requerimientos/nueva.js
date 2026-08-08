@@ -11,8 +11,7 @@ export default function NuevoRequerimiento() {
   const [tiposTransaccion, setTiposTransaccion] = useState([]);
   const [zonas, setZonas] = useState([]);
 
-  const [clienteNombre, setClienteNombre] = useState('');
-  const [clienteTelefono, setClienteTelefono] = useState('');
+  const [nombreRequerimiento, setNombreRequerimiento] = useState('');
   const [tipoInmuebleId, setTipoInmuebleId] = useState('');
   const [tipoTransaccionId, setTipoTransaccionId] = useState('');
   const [zonasSeleccionadas, setZonasSeleccionadas] = useState([]);
@@ -52,8 +51,7 @@ export default function NuevoRequerimiento() {
   }
 
   function handleNuevoRegistro() {
-    setClienteNombre('');
-    setClienteTelefono('');
+    setNombreRequerimiento('');
     setTipoInmuebleId('');
     setTipoTransaccionId('');
     setZonasSeleccionadas([]);
@@ -70,8 +68,8 @@ export default function NuevoRequerimiento() {
     e.preventDefault();
     setError('');
 
-    if (!clienteNombre.trim()) {
-      setError('Ingresá el nombre del cliente.');
+    if (!nombreRequerimiento.trim()) {
+      setError('Ingresá un nombre para el requerimiento.');
       return;
     }
 
@@ -81,8 +79,7 @@ export default function NuevoRequerimiento() {
         .from('requerimientos')
         .insert({
           asesor_id: usuario.id,
-          cliente_nombre: clienteNombre,
-          cliente_telefono: clienteTelefono || null,
+          nombre_requerimiento: nombreRequerimiento,
           tipo_inmueble_id: tipoInmuebleId || null,
           tipo_transaccion_id: tipoTransaccionId || null,
           ubicacion_referencia: ubicacionReferencia || null,
@@ -209,11 +206,15 @@ export default function NuevoRequerimiento() {
 
           <div className="card">
             <div className="form-section">
-              <h3>Cliente</h3>
-              <label>Nombre</label>
-              <input type="text" value={clienteNombre} onChange={(e) => setClienteNombre(e.target.value)} required />
-              <label>Teléfono</label>
-              <input type="text" value={clienteTelefono} onChange={(e) => setClienteTelefono(e.target.value)} />
+              <h3>Requerimiento</h3>
+              <label>Nombre del requerimiento (referencia interna, no hace falta que sea el nombre real del cliente)</label>
+              <input
+                type="text"
+                value={nombreRequerimiento}
+                onChange={(e) => setNombreRequerimiento(e.target.value)}
+                placeholder='Ej: "Cliente A - terreno Doble Vía"'
+                required
+              />
             </div>
 
             <div className="form-section">

@@ -24,7 +24,7 @@ export default function Requerimientos() {
     let query = supabase
       .from('requerimientos')
       .select(
-        `id, cliente_nombre, cliente_telefono, ubicacion_referencia, presupuesto_min, presupuesto_max, dormitorios_min, estado, fecha_creacion,
+        `id, nombre_requerimiento, ubicacion_referencia, presupuesto_min, presupuesto_max, dormitorios_min, estado, fecha_creacion,
          tipo_inmueble:tipos_inmueble(nombre),
          tipo_transaccion:tipos_transaccion(nombre),
          asesor:usuarios(nombre)`
@@ -89,7 +89,7 @@ export default function Requerimientos() {
         {requerimientos.map((r) => (
           <div key={r.id} className="card">
             <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: 16, color: '#06416A' }}>
-              {r.cliente_nombre}
+              {r.nombre_requerimiento}
             </p>
             <p style={{ margin: '0 0 4px', fontWeight: 500 }}>
               {r.tipo_inmueble?.nombre || 'Cualquier tipo'} en {r.tipo_transaccion?.nombre || 'cualquier transacción'}

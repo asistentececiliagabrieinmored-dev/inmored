@@ -105,8 +105,6 @@ function construirEsquemaRequerimiento({ tiposInmueble, tiposTransaccion, zonas 
   return {
     type: 'object',
     properties: {
-      clienteNombre: { type: 'string', description: 'Nombre del cliente que está buscando el inmueble.' },
-      clienteTelefono: nullableString('Teléfono del cliente, si se menciona.'),
       tipoInmuebleId: {
         anyOf: [
           {
@@ -145,8 +143,6 @@ function construirEsquemaRequerimiento({ tiposInmueble, tiposTransaccion, zonas 
       descripcion: { type: 'string', description: 'Resumen breve (1-2 frases) de otros detalles del requerimiento.' },
     },
     required: [
-      'clienteNombre',
-      'clienteTelefono',
       'tipoInmuebleId',
       'tipoTransaccionId',
       'zonaIds',
@@ -339,7 +335,7 @@ async function procesarReferencia(usuario, chatId, mensaje) {
       if (asesor?.telegram_activo && asesor.telegram_chat_id) {
         await enviarMensaje(
           asesor.telegram_chat_id,
-          `🔔 Nueva referencia que podría interesarle a tu cliente "${req.cliente_nombre}":\n\n${
+          `🔔 Nueva referencia que podría coincidir con "${req.nombre_requerimiento}":\n\n${
             datos?.descripcion || texto.slice(0, 200)
           }`
         );
@@ -370,7 +366,7 @@ async function procesarReferencia(usuario, chatId, mensaje) {
   );
 }
 
-async function manejarNuevoRequerimiento(chatId, textoLibre, usuario) {
+async function manejarNuevoRequerimiento(chatId, nombreRequerimiento, textoLibre, usuario) {
   const [{ data: tiposInmueble }, { data: tiposTransaccion }, { data: zonas }] = await Promise.all([
     supabaseAdmin.from('tipos_inmueble').select('id, nombre'),
     supabaseAdmin.from('tipos_transaccion').select('id, nombre'),
@@ -386,28 +382,18 @@ async function manejarNuevoRequerimiento(chatId, textoLibre, usuario) {
     console.error('Error llamando a Claude para requerimiento:', err);
   }
 
-  if (!datos?.clienteNombre) {
-    await enviarMensaje(
-      chatId,
-      'No pude identificar el nombre del cliente. Escribilo explícitamente, por ejemplo:\n' +
-        '/requerimiento Juan busca casa en Equipetrol, hasta 180000, 3 dormitorios, tel 70011223'
-    );
-    return;
-  }
-
   const { data: requerimiento, error: errorInsert } = await supabaseAdmin
     .from('requerimientos')
     .insert({
       asesor_id: usuario.id,
-      cliente_nombre: datos.clienteNombre,
-      cliente_telefono: datos.clienteTelefono || null,
-      tipo_inmueble_id: datos.tipoInmuebleId || null,
-      tipo_transaccion_id: datos.tipoTransaccionId || null,
-      ubicacion_referencia: datos.ubicacionReferencia || null,
-      presupuesto_min: datos.presupuestoMin || null,
-      presupuesto_max: datos.presupuestoMax || null,
-      dormitorios_min: datos.dormitoriosMin || null,
-      descripcion: datos.descripcion || null,
+      nombre_requerimiento: nombreRequerimiento,
+      tipo_inmueble_id: datos?.tipoInmuebleId || null,
+      tipo_transaccion_id: datos?.tipoTransaccionId || null,
+      ubicacion_referencia: datos?.ubicacionReferencia || null,
+      presupuesto_min: datos?.presupuestoMin || null,
+      presupuesto_max: datos?.presupuestoMax || null,
+      dormitorios_min: datos?.dormitoriosMin || null,
+      descripcion: datos?.descripcion || textoLibre,
     })
     .select()
     .single();
@@ -418,7 +404,7 @@ async function manejarNuevoRequerimiento(chatId, textoLibre, usuario) {
     return;
   }
 
-  if (datos.zonaIds && datos.zonaIds.length > 0) {
+  if (datos?.zonaIds && datos.zonaIds.length > 0) {
     await supabaseAdmin
       .from('requerimiento_zonas')
       .insert(datos.zonaIds.map((zonaId) => ({ requerimiento_id: requerimiento.id, zona_id: zonaId })));
@@ -426,19 +412,19 @@ async function manejarNuevoRequerimiento(chatId, textoLibre, usuario) {
 
   try {
     const { inmuebles, referencias } = await buscarCoincidenciasParaRequerimiento(supabaseAdmin, {
-      tipoInmuebleId: datos.tipoInmuebleId,
-      tipoTransaccionId: datos.tipoTransaccionId,
-      zonaIds: datos.zonaIds || [],
-      ubicacionReferencia: datos.ubicacionReferencia,
-      presupuestoMin: datos.presupuestoMin,
-      presupuestoMax: datos.presupuestoMax,
-      dormitoriosMin: datos.dormitoriosMin,
+      tipoInmuebleId: datos?.tipoInmuebleId,
+      tipoTransaccionId: datos?.tipoTransaccionId,
+      zonaIds: datos?.zonaIds || [],
+      ubicacionReferencia: datos?.ubicacionReferencia,
+      presupuestoMin: datos?.presupuestoMin,
+      presupuestoMax: datos?.presupuestoMax,
+      dormitoriosMin: datos?.dormitoriosMin,
     });
 
-    await enviarMensaje(chatId, formatearResumenCoincidencias(datos.clienteNombre, inmuebles, referencias));
+    await enviarMensaje(chatId, formatearResumenCoincidencias(nombreRequerimiento, inmuebles, referencias));
   } catch (err) {
     console.error('Error buscando coincidencias para requerimiento nuevo:', err);
-    await enviarMensaje(chatId, `Requerimiento guardado para "${datos.clienteNombre}".`);
+    await enviarMensaje(chatId, `Requerimiento guardado: "${nombreRequerimiento}".`);
   }
 }
 
@@ -453,8 +439,11 @@ async function manejarComando(chatId, texto, usuario, tieneAccesoVigente) {
         (usuario?.telegram_activo
           ? 'Ya tenés tu acceso activo. Reenviame los inmuebles que veas en los grupos de WhatsApp y los guardo automáticamente.'
           : 'Para activar tu acceso, enviame el código de activación que te dio Romano.') +
-        '\n\nComandos disponibles:\n/ayuda — este mensaje\n/estado — ver si tu acceso está activo\n' +
-        '/requerimiento <texto> — cargar lo que está buscando un cliente'
+        '\n\nComandos disponibles:\n/ayuda — este mensaje\n/estado — ver si tu acceso está activo\n\n' +
+        '/requerimiento — cargar lo que está buscando un cliente. Primera línea: nombre del requerimiento ' +
+        '(vos elegís cuál, no hace falta el nombre real del cliente). Resto: qué busca. Ejemplo:\n' +
+        '/requerimiento Cliente A - terreno Doble Vía\n' +
+        'Busca terreno en alquiler cerca de la avenida doble vía a la guardia, sin presupuesto definido'
     );
     return;
   }
@@ -479,15 +468,35 @@ async function manejarComando(chatId, texto, usuario, tieneAccesoVigente) {
       await enviarMensaje(chatId, 'Necesitás activar tu acceso primero. Enviame el código de activación que te dio Romano.');
       return;
     }
+
+    const EJEMPLO_REQUERIMIENTO =
+      '/requerimiento Cliente A - terreno Doble Vía\n' +
+      'Busca terreno en alquiler cerca de la avenida doble vía a la guardia, sin presupuesto definido';
+
     if (!resto) {
       await enviarMensaje(
         chatId,
-        'Escribí el requerimiento después del comando, por ejemplo:\n' +
-          '/requerimiento Juan busca casa en venta en Equipetrol o Las Palmas, hasta 180000, 3 dormitorios, tel 70011223'
+        'Escribí el requerimiento en dos líneas: primero el nombre que le querés dar (vos elegís cuál, ' +
+          'no hace falta el nombre real del cliente), y en la línea siguiente qué está buscando. Ejemplo:\n\n' +
+          EJEMPLO_REQUERIMIENTO
       );
       return;
     }
-    await manejarNuevoRequerimiento(chatId, resto, usuario);
+
+    const lineas = resto.split('\n');
+    const nombreRequerimiento = lineas[0].trim();
+    const textoLibre = lineas.slice(1).join('\n').trim();
+
+    if (!nombreRequerimiento || !textoLibre) {
+      await enviarMensaje(
+        chatId,
+        'Me falta la primera línea (nombre del requerimiento) o la segunda (qué está buscando). Ejemplo:\n\n' +
+          EJEMPLO_REQUERIMIENTO
+      );
+      return;
+    }
+
+    await manejarNuevoRequerimiento(chatId, nombreRequerimiento, textoLibre, usuario);
     return;
   }
 
