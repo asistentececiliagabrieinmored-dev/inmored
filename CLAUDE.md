@@ -56,7 +56,13 @@ InmoRed es una plataforma de gestión inmobiliaria para una agencia pequeña en 
 ## Funcionalidades diseñadas pero NO construidas todavía
 
 ### Sistema de bot de Telegram + red de referencias externas
-Diseño ya definido. **El schema de base de datos ya está creado en Supabase** (ver `supabase/referencias_externas_y_requerimientos.sql`, corrido el 2026-08-08): tablas `configuracion_sistema`, `referencias_externas`, `fotografias_referencia_externa`, `requerimientos` y `requerimiento_zonas`, con RLS basado en `es_usuario_inmored()`. Falta todo lo demás: el bot de Telegram en sí, el parsing con Claude Haiku, y la webapp.
+Diseño ya definido. Progreso:
+
+- **Schema de referencias/requerimientos**: creado en Supabase (ver `supabase/referencias_externas_y_requerimientos.sql`, corrido el 2026-08-08): tablas `configuracion_sistema`, `referencias_externas`, `fotografias_referencia_externa`, `requerimientos` y `requerimiento_zonas`, con RLS basado en `es_usuario_inmored()`.
+- **Schema de activación de Telegram**: SQL listo en `supabase/telegram_bot_activacion.sql` (columnas `telegram_chat_id`/`telegram_activo`/`telegram_acceso_hasta` en `usuarios`, tabla `codigos_activacion_telegram`) — **pendiente de correr en Supabase**.
+- **Webhook del bot**: `pages/api/telegram-webhook.js`. Maneja activación por código (con expiración tipo suscripción) y, una vez activado el asesor, guarda cada mensaje reenviado como una fila en `referencias_externas`, parseado con **Claude Haiku 4.5** (`lib/supabaseAdmin.js` usa la Service Role Key para bypassear RLS, porque el bot no tiene sesión de Supabase Auth).
+- **Variables de entorno nuevas que hacen falta en Vercel** (además de las de Supabase que ya existen): `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` (opcional, recomendado), `SUPABASE_SERVICE_ROLE_KEY` (⚠️ nunca con prefijo `NEXT_PUBLIC_`, es server-only), `ANTHROPIC_API_KEY`.
+- **Pendiente**: correr el SQL de activación, crear el bot vía @BotFather, configurar las variables de entorno, registrar el webhook (`setWebhook`), generar códigos de activación para cada asesor, y construir la webapp pública (fuera de alcance por ahora).
 
 - **Tabla `referencias_externas`**: inmuebles compartidos desde grupos de WhatsApp (no captados directamente por InmoRed, sino "vistos" en grupos de intercambio entre inmobiliarias). Campos pensados: retención configurable (tiempo de vida del dato), `contador_contactos` (cuántas veces se consultó/contactó por esa referencia), y lógica de auto-matching contra `requerimientos`.
 - **Tabla `requerimientos`**: búsquedas activas de clientes, cargadas por cada asesor (qué está buscando un cliente puntual: tipo, zona, presupuesto, etc.), para cruzar contra referencias externas y también contra inmuebles propios.
