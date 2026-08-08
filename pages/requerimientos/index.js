@@ -94,31 +94,67 @@ export default function Requerimientos() {
 
         {requerimientos.map((r) => (
           <div key={r.id} className="card" style={{ position: 'relative' }}>
-            <div style={{ position: 'absolute', top: 12, right: 16, display: 'flex', gap: 10 }}>
+            <div style={{ position: 'absolute', top: 10, right: 12, display: 'flex', gap: 4 }}>
               <a
                 href={`/requerimientos/${r.id}`}
                 title="Editar"
-                style={{ fontSize: 16, lineHeight: 1, textDecoration: 'none' }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 30,
+                  height: 30,
+                  color: '#666',
+                }}
               >
-                ✏️
+                <svg
+                  viewBox="0 0 24 24"
+                  width="17"
+                  height="17"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                </svg>
               </a>
               <button
                 onClick={() => handleEliminar(r.id, r.nombre_requerimiento)}
                 title="Eliminar"
                 style={{
-                  fontSize: 16,
-                  lineHeight: 1,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 30,
+                  height: 30,
                   background: 'none',
                   border: 'none',
                   padding: 0,
-                  width: 'auto',
                   cursor: 'pointer',
+                  color: '#b3261e',
                 }}
               >
-                🗑️
+                <svg
+                  viewBox="0 0 24 24"
+                  width="17"
+                  height="17"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  <line x1="10" y1="11" x2="10" y2="17" />
+                  <line x1="14" y1="11" x2="14" y2="17" />
+                </svg>
               </button>
             </div>
-            <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: 16, color: '#06416A', paddingRight: 56 }}>
+            <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: 16, color: '#06416A', paddingRight: 72 }}>
               {r.nombre_requerimiento}
             </p>
             <p style={{ margin: '0 0 4px', fontWeight: 500 }}>

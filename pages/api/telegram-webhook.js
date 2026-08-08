@@ -315,7 +315,7 @@ async function procesarReferencia(usuario, chatId, mensaje) {
   let diasRetencion;
   if (tipoTransaccionNombre === 'venta') {
     diasRetencion = Number(configPorClave.retencion_dias_referencias_venta) || RETENCION_DIAS_VENTA_DEFECTO;
-  } else if (tipoTransaccionNombre === 'alquiler' || tipoTransaccionNombre === 'anticretico') {
+  } else if (tipoTransaccionNombre === 'alquiler' || tipoTransaccionNombre === 'anticrético') {
     diasRetencion =
       Number(configPorClave.retencion_dias_referencias_alquiler_anticretico) || RETENCION_DIAS_ALQUILER_DEFECTO;
   } else {

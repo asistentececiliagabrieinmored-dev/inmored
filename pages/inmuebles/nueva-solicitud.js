@@ -16,7 +16,7 @@ const DOCUMENTOS_POR_TRANSACCION = {
     { tipo: 'alodial', label: 'Folio real / Alodial', accept: '.pdf,image/*' },
     { tipo: 'ci_propietario', label: 'Carnet de identidad del propietario', accept: '.pdf,image/*' },
   ],
-  anticretico: [
+  anticrético: [
     { tipo: 'alodial', label: 'Folio real / Alodial', accept: '.pdf,image/*' },
     { tipo: 'ci_propietario', label: 'Carnet de identidad del propietario', accept: '.pdf,image/*' },
   ],

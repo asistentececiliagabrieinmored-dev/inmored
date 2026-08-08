@@ -257,7 +257,7 @@ export default function DetalleInmueble() {
           </div>
         </div>
 
-        {/* ZONA, UBICACION, PRECIO */}
+        {/* ZONA, UBICACIÓN, PRECIO */}
         <div className="card">
           <h3 style={{ color: '#06416A', marginTop: 0 }}>Zona, ubicación y precio</h3>
           <form onSubmit={handleGuardarDatos}>
