@@ -93,8 +93,32 @@ export default function Requerimientos() {
         {!cargando && requerimientos.length === 0 && <p>No hay requerimientos en este estado.</p>}
 
         {requerimientos.map((r) => (
-          <div key={r.id} className="card">
-            <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: 16, color: '#06416A' }}>
+          <div key={r.id} className="card" style={{ position: 'relative' }}>
+            <div style={{ position: 'absolute', top: 12, right: 16, display: 'flex', gap: 10 }}>
+              <a
+                href={`/requerimientos/${r.id}`}
+                title="Editar"
+                style={{ fontSize: 16, lineHeight: 1, textDecoration: 'none' }}
+              >
+                ✏️
+              </a>
+              <button
+                onClick={() => handleEliminar(r.id, r.nombre_requerimiento)}
+                title="Eliminar"
+                style={{
+                  fontSize: 16,
+                  lineHeight: 1,
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  width: 'auto',
+                  cursor: 'pointer',
+                }}
+              >
+                🗑️
+              </button>
+            </div>
+            <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: 16, color: '#06416A', paddingRight: 56 }}>
               {r.nombre_requerimiento}
             </p>
             <p style={{ margin: '0 0 4px', fontWeight: 500 }}>
@@ -113,23 +137,11 @@ export default function Requerimientos() {
             <p style={{ margin: '4px 0 0', color: '#888', fontSize: 12 }}>
               Asesor: {r.asesor?.nombre || '—'} · Cargado: {new Date(r.fecha_creacion).toLocaleDateString('es-BO')}
             </p>
-            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-              <a href={`/requerimientos/${r.id}`} className="btn-secondary" style={{ width: 'auto' }}>
-                Editar
-              </a>
-              {r.estado === 'activo' && (
-                <button onClick={() => handleCerrar(r.id)} className="btn-secondary" style={{ width: 'auto' }}>
-                  Marcar como cerrado
-                </button>
-              )}
-              <button
-                onClick={() => handleEliminar(r.id, r.nombre_requerimiento)}
-                className="btn-secondary"
-                style={{ width: 'auto', color: '#b3261e', borderColor: '#b3261e' }}
-              >
-                Eliminar
+            {r.estado === 'activo' && (
+              <button onClick={() => handleCerrar(r.id)} className="btn-secondary" style={{ marginTop: 8, width: 'auto' }}>
+                Marcar como cerrado
               </button>
-            </div>
+            )}
           </div>
         ))}
       </div>

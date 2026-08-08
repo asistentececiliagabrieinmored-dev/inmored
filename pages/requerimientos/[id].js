@@ -26,7 +26,7 @@ export default function EditarRequerimiento() {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
-  const [mensaje, setMensaje] = useState('');
+  const [exito, setExito] = useState(false);
   const [resultado, setResultado] = useState(null);
 
   useEffect(() => {
@@ -77,7 +77,6 @@ export default function EditarRequerimiento() {
   async function handleGuardar(e) {
     e.preventDefault();
     setError('');
-    setMensaje('');
 
     if (!nombreRequerimiento.trim()) {
       setError('Ingresá un nombre para el requerimiento.');
@@ -124,7 +123,7 @@ export default function EditarRequerimiento() {
       });
       const datos = await respuesta.json();
       setResultado(datos);
-      setMensaje('Requerimiento actualizado. Se volvieron a validar las coincidencias.');
+      setExito(true);
     } catch (err) {
       setError(err.message || 'Ocurrió un error al guardar los cambios.');
     } finally {
@@ -136,6 +135,63 @@ export default function EditarRequerimiento() {
     return (
       <div className="container">
         <p>Cargando...</p>
+      </div>
+    );
+  }
+
+  if (exito) {
+    const totalCoincidencias = (resultado?.inmuebles.length || 0) + (resultado?.referencias.length || 0);
+
+    return (
+      <div>
+        <div className="top-bar">
+          <h1>INMORED</h1>
+        </div>
+        <div className="container">
+          <div className="success-box">
+            <h2>Requerimiento actualizado</h2>
+            <p>
+              {totalCoincidencias > 0
+                ? `Encontramos ${totalCoincidencias} coincidencia(s) con los datos actuales.`
+                : 'No hay coincidencias con los datos actuales, pero te vamos a avisar apenas aparezca algo.'}
+            </p>
+          </div>
+
+          {totalCoincidencias > 0 && (
+            <div className="card" style={{ marginTop: 16 }}>
+              {resultado.inmuebles.map((i) => (
+                <p key={`i-${i.id}`} style={{ margin: '8px 0' }}>
+                  🏠 <b>Propio:</b> {i.nombre || i.ubicacion || `Inmueble #${i.id}`} — $us {i.precio_venta ?? '—'}
+                  <br />
+                  <span style={{ fontSize: 13, color: '#555' }}>
+                    Asesor: {i.captador?.nombre || '—'}
+                    {i.captador?.telefono ? ` · ${i.captador.telefono}` : ''}
+                  </span>
+                </p>
+              ))}
+              {resultado.referencias.map((r) => (
+                <p key={`r-${r.id}`} style={{ margin: '8px 0' }}>
+                  📲 <b>Referencia:</b> {r.ubicacion || r.descripcion?.slice(0, 60) || 'Sin ubicación'} —{' '}
+                  {r.precio ? `${r.moneda === 'bob' ? 'Bs.' : '$us'} ${r.precio}` : 'precio no informado'}
+                  <br />
+                  <span style={{ fontSize: 13, color: '#555' }}>
+                    Contacto: {r.contacto_nombre || '—'}
+                    {r.contacto_telefono ? ` · ${r.contacto_telefono}` : ''}
+                  </span>
+                </p>
+              ))}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 16 }}>
+            <button onClick={() => setExito(false)} style={{ width: 'auto' }}>
+              Seguir editando
+            </button>
+            <a href="/requerimientos" className="btn-secondary">
+              Volver al listado
+            </a>
+          </div>
+        </div>
       </div>
     );
   }
@@ -152,11 +208,6 @@ export default function EditarRequerimiento() {
       <div className="container">
         <h2>Editar requerimiento</h2>
 
-        {mensaje && (
-          <div className="success-box" style={{ margin: '16px 0' }}>
-            <p style={{ margin: 0 }}>{mensaje}</p>
-          </div>
-        )}
         {error && <p className="error-text">{error}</p>}
 
         <form onSubmit={handleGuardar}>
@@ -266,37 +317,6 @@ export default function EditarRequerimiento() {
             {guardando ? 'Guardando...' : 'Guardar cambios y revalidar coincidencias'}
           </button>
         </form>
-
-        {resultado && (
-          <div className="card" style={{ marginTop: 16 }}>
-            <h3 style={{ color: '#06416A', marginTop: 0 }}>
-              {resultado.inmuebles.length + resultado.referencias.length > 0
-                ? `${resultado.inmuebles.length + resultado.referencias.length} coincidencia(s) con los datos actuales`
-                : 'No hay coincidencias con los datos actuales'}
-            </h3>
-            {resultado.inmuebles.map((i) => (
-              <p key={`i-${i.id}`} style={{ margin: '8px 0' }}>
-                🏠 <b>Propio:</b> {i.nombre || i.ubicacion || `Inmueble #${i.id}`} — $us {i.precio_venta ?? '—'}
-                <br />
-                <span style={{ fontSize: 13, color: '#555' }}>
-                  Asesor: {i.captador?.nombre || '—'}
-                  {i.captador?.telefono ? ` · ${i.captador.telefono}` : ''}
-                </span>
-              </p>
-            ))}
-            {resultado.referencias.map((r) => (
-              <p key={`r-${r.id}`} style={{ margin: '8px 0' }}>
-                📲 <b>Referencia:</b> {r.ubicacion || r.descripcion?.slice(0, 60) || 'Sin ubicación'} —{' '}
-                {r.precio ? `${r.moneda === 'bob' ? 'Bs.' : '$us'} ${r.precio}` : 'precio no informado'}
-                <br />
-                <span style={{ fontSize: 13, color: '#555' }}>
-                  Contacto: {r.contacto_nombre || '—'}
-                  {r.contacto_telefono ? ` · ${r.contacto_telefono}` : ''}
-                </span>
-              </p>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
