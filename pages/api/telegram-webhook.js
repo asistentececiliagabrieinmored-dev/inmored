@@ -131,8 +131,10 @@ function construirEsquemaRequerimiento({ tiposInmueble, tiposTransaccion, zonas 
         type: 'array',
         items: { type: 'integer', enum: zonas.map((z) => z.id) },
         description:
-          'IDs de las zonas mencionadas o razonablemente equivalentes, de la lista dada en el system prompt. ' +
-          'Array vacío si no se menciona ninguna zona o ninguna se parece lo suficiente.',
+          'IDs de las zonas SOLO si el cliente nombra explícitamente una zona/barrio conocido (o una variante ' +
+          'clara de escritura de uno). Si el cliente solo menciona una calle, avenida o anillo puntual (sin ' +
+          'nombrar una zona), dejá este array vacío y usá ubicacionReferencia en su lugar — no adivines a qué ' +
+          'zona pertenece geográficamente esa dirección.',
       },
       ubicacionReferencia: nullableString(
         'Ubicación específica mencionada (avenida, anillo, barrio puntual) que no sea exactamente una de las zonas listadas.'
@@ -174,10 +176,10 @@ async function extraerDatosRequerimiento(texto, catalogos) {
       `Tipos de inmueble disponibles (id=nombre): ${listaTipos}\n` +
       `Tipos de transacción disponibles (id=nombre): ${listaTransacciones}\n` +
       `Zonas disponibles (id=nombre): ${listaZonas}\n\n` +
-      'Para zonaIds: elegí la o las zonas más parecidas de la lista si el cliente menciona algo que se le ' +
-      'parece razonablemente (sinónimos, variantes de escritura, zona vecina conocida), aunque no sea ' +
-      'exactamente igual. Dejá el array vacío si no se menciona ninguna zona o ninguna se parece lo suficiente. ' +
-      'No inventes información que no esté en el mensaje.',
+      'Para zonaIds: elegí la o las zonas más parecidas de la lista SOLO si el cliente nombra explícitamente ' +
+      'una zona o barrio conocido (sinónimos y variantes de escritura sí cuentan). Si el cliente solo da una ' +
+      'calle, avenida o anillo específico sin nombrar una zona, dejá zonaIds vacío y usá ubicacionReferencia — ' +
+      'no adivines a qué zona pertenece esa dirección. No inventes información que no esté en el mensaje.',
     messages: [{ role: 'user', content: texto }],
     output_config: {
       format: { type: 'json_schema', schema: construirEsquemaRequerimiento(catalogos) },
