@@ -48,6 +48,12 @@ export default function Requerimientos() {
     cargarRequerimientos();
   }
 
+  async function handleEliminar(id, nombre) {
+    if (!window.confirm(`¿Eliminar el requerimiento "${nombre}"? Esta acción no se puede deshacer.`)) return;
+    await supabase.from('requerimientos').delete().eq('id', id);
+    cargarRequerimientos();
+  }
+
   return (
     <div>
       <div className="top-bar">
@@ -107,11 +113,23 @@ export default function Requerimientos() {
             <p style={{ margin: '4px 0 0', color: '#888', fontSize: 12 }}>
               Asesor: {r.asesor?.nombre || '—'} · Cargado: {new Date(r.fecha_creacion).toLocaleDateString('es-BO')}
             </p>
-            {r.estado === 'activo' && (
-              <button onClick={() => handleCerrar(r.id)} className="btn-secondary" style={{ marginTop: 8, width: 'auto' }}>
-                Marcar como cerrado
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <a href={`/requerimientos/${r.id}`} className="btn-secondary" style={{ width: 'auto' }}>
+                Editar
+              </a>
+              {r.estado === 'activo' && (
+                <button onClick={() => handleCerrar(r.id)} className="btn-secondary" style={{ width: 'auto' }}>
+                  Marcar como cerrado
+                </button>
+              )}
+              <button
+                onClick={() => handleEliminar(r.id, r.nombre_requerimiento)}
+                className="btn-secondary"
+                style={{ width: 'auto', color: '#b3261e', borderColor: '#b3261e' }}
+              >
+                Eliminar
               </button>
-            )}
+            </div>
           </div>
         ))}
       </div>

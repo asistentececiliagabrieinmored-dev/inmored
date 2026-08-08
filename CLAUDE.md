@@ -31,8 +31,9 @@ InmoRed es una plataforma de gestión inmobiliaria para una agencia pequeña en 
 - `pages/inmuebles/carga-historica.js` — carga manual de inmuebles ya existentes (históricos, vendidos/alquilados o aún disponibles). NO pasa por flujo de aprobación.
 - `pages/aprobaciones/index.js` — bandeja del gerente de operaciones con las solicitudes (pendiente/devuelto/rechazado/aprobado)
 - `pages/aprobaciones/[id].js` — detalle de una solicitud para aprobarla, devolverla (con observación) o rechazarla (con motivo)
-- `pages/requerimientos/index.js` — listado de requerimientos (búsquedas activas de clientes), con filtro por estado y botón para cerrarlos
+- `pages/requerimientos/index.js` — listado de requerimientos (búsquedas activas de clientes), con filtro por estado y botones para editar/cerrar/eliminar
 - `pages/requerimientos/nueva.js` — formulario para cargar un requerimiento nuevo; al guardar, busca coincidencias de inmediato (inmuebles propios primero, después referencias externas) y las muestra en pantalla
+- `pages/requerimientos/[id].js` — edición de un requerimiento existente (solo desde la web, no desde el bot); al guardar, vuelve a correr el matching y muestra las coincidencias actualizadas
 - `pages/api/telegram-webhook.js` — webhook del bot de Telegram (activación + parsing de referencias externas con Claude Haiku + aviso automático a asesores con requerimientos coincidentes)
 - `pages/api/requerimientos/notificar.js` — dado un `requerimientoId`, busca coincidencias y avisa por Telegram al asesor dueño si tiene el bot activado
 - `lib/supabaseClient.js` — instancia única del cliente de Supabase
