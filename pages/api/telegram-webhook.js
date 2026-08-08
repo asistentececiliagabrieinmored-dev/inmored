@@ -230,6 +230,7 @@ async function procesarReferencia(usuario, chatId, mensaje) {
       tipoInmuebleId,
       tipoTransaccionId,
       zonaId,
+      ubicacion: datos?.ubicacion || null,
       precio: datos?.precio || null,
       moneda: datos?.moneda || null,
       dormitorios: datos?.dormitorios || null,

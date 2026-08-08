@@ -24,7 +24,7 @@ export default function Requerimientos() {
     let query = supabase
       .from('requerimientos')
       .select(
-        `id, cliente_nombre, cliente_telefono, presupuesto_min, presupuesto_max, dormitorios_min, estado, fecha_creacion,
+        `id, cliente_nombre, cliente_telefono, ubicacion_referencia, presupuesto_min, presupuesto_max, dormitorios_min, estado, fecha_creacion,
          tipo_inmueble:tipos_inmueble(nombre),
          tipo_transaccion:tipos_transaccion(nombre),
          asesor:usuarios(nombre)`
@@ -99,6 +99,11 @@ export default function Requerimientos() {
               Presupuesto: {r.presupuesto_min ? `$us ${r.presupuesto_min}` : 'sin mínimo'} —{' '}
               {r.presupuesto_max ? `$us ${r.presupuesto_max}` : 'sin máximo'}
             </p>
+            {r.ubicacion_referencia && (
+              <p style={{ margin: '2px 0 0', color: '#555', fontSize: 13 }}>
+                Ubicación: {r.ubicacion_referencia}
+              </p>
+            )}
             <p style={{ margin: '4px 0 0', color: '#888', fontSize: 12 }}>
               Asesor: {r.asesor?.nombre || '—'} · Cargado: {new Date(r.fecha_creacion).toLocaleDateString('es-BO')}
             </p>

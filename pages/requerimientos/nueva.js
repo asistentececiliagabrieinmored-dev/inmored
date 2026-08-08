@@ -16,6 +16,7 @@ export default function NuevoRequerimiento() {
   const [tipoInmuebleId, setTipoInmuebleId] = useState('');
   const [tipoTransaccionId, setTipoTransaccionId] = useState('');
   const [zonasSeleccionadas, setZonasSeleccionadas] = useState([]);
+  const [ubicacionReferencia, setUbicacionReferencia] = useState('');
   const [presupuestoMin, setPresupuestoMin] = useState('');
   const [presupuestoMax, setPresupuestoMax] = useState('');
   const [dormitoriosMin, setDormitoriosMin] = useState('');
@@ -23,6 +24,7 @@ export default function NuevoRequerimiento() {
 
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
+  const [exito, setExito] = useState(false);
   const [resultado, setResultado] = useState(null);
 
   useEffect(() => {
@@ -49,6 +51,21 @@ export default function NuevoRequerimiento() {
     setZonasSeleccionadas((prev) => (prev.includes(id) ? prev.filter((z) => z !== id) : [...prev, id]));
   }
 
+  function handleNuevoRegistro() {
+    setClienteNombre('');
+    setClienteTelefono('');
+    setTipoInmuebleId('');
+    setTipoTransaccionId('');
+    setZonasSeleccionadas([]);
+    setUbicacionReferencia('');
+    setPresupuestoMin('');
+    setPresupuestoMax('');
+    setDormitoriosMin('');
+    setDescripcion('');
+    setResultado(null);
+    setExito(false);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
@@ -59,7 +76,6 @@ export default function NuevoRequerimiento() {
     }
 
     setEnviando(true);
-    setResultado(null);
     try {
       const { data: requerimiento, error: errorInsert } = await supabase
         .from('requerimientos')
@@ -69,6 +85,7 @@ export default function NuevoRequerimiento() {
           cliente_telefono: clienteTelefono || null,
           tipo_inmueble_id: tipoInmuebleId || null,
           tipo_transaccion_id: tipoTransaccionId || null,
+          ubicacion_referencia: ubicacionReferencia || null,
           presupuesto_min: presupuestoMin || null,
           presupuesto_max: presupuestoMax || null,
           dormitorios_min: dormitoriosMin || null,
@@ -93,6 +110,7 @@ export default function NuevoRequerimiento() {
       });
       const datos = await respuesta.json();
       setResultado(datos);
+      setExito(true);
     } catch (err) {
       setError(err.message || 'Ocurrió un error al guardar el requerimiento.');
     } finally {
@@ -104,6 +122,67 @@ export default function NuevoRequerimiento() {
     return (
       <div className="container">
         <p>Cargando...</p>
+      </div>
+    );
+  }
+
+  if (exito) {
+    const totalCoincidencias = (resultado?.inmuebles.length || 0) + (resultado?.referencias.length || 0);
+
+    return (
+      <div>
+        <div className="top-bar">
+          <h1>INMORED</h1>
+        </div>
+        <div className="container">
+          <div className="success-box">
+            <h2>Requerimiento guardado</h2>
+            <p>
+              {totalCoincidencias > 0
+                ? `Encontramos ${totalCoincidencias} coincidencia(s) ahora mismo.`
+                : 'No hay coincidencias todavía, pero te vamos a avisar apenas aparezca algo.'}
+            </p>
+          </div>
+
+          {totalCoincidencias > 0 && (
+            <div className="card" style={{ marginTop: 16 }}>
+              {resultado.inmuebles.map((i) => (
+                <p key={`i-${i.id}`} style={{ margin: '8px 0' }}>
+                  🏠 <b>Propio:</b> {i.nombre || i.ubicacion || `Inmueble #${i.id}`} — $us {i.precio_venta ?? '—'}
+                  <br />
+                  <span style={{ fontSize: 13, color: '#555' }}>
+                    Asesor: {i.captador?.nombre || '—'}
+                    {i.captador?.telefono ? ` · ${i.captador.telefono}` : ''}
+                  </span>
+                </p>
+              ))}
+              {resultado.referencias.map((r) => (
+                <p key={`r-${r.id}`} style={{ margin: '8px 0' }}>
+                  📲 <b>Referencia:</b> {r.ubicacion || r.descripcion?.slice(0, 60) || 'Sin ubicación'} —{' '}
+                  {r.precio ? `${r.moneda === 'bob' ? 'Bs.' : '$us'} ${r.precio}` : 'precio no informado'}
+                  <br />
+                  <span style={{ fontSize: 13, color: '#555' }}>
+                    Contacto: {r.contacto_nombre || '—'}
+                    {r.contacto_telefono ? ` · ${r.contacto_telefono}` : ''}
+                  </span>
+                </p>
+              ))}
+              <p className="solo-lectura-nota" style={{ marginTop: 12 }}>
+                De ahora en más, cualquier referencia nueva que coincida con este requerimiento te va
+                a llegar automáticamente por Telegram (si tenés el bot activado).
+              </p>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 16 }}>
+            <button onClick={handleNuevoRegistro} style={{ width: 'auto' }}>
+              Cargar otro requerimiento
+            </button>
+            <a href="/requerimientos" className="btn-secondary">
+              Ver todos los requerimientos
+            </a>
+          </div>
+        </div>
       </div>
     );
   }
@@ -186,6 +265,18 @@ export default function NuevoRequerimiento() {
                 ))}
               </div>
 
+              <label>Ubicación específica (opcional)</label>
+              <input
+                type="text"
+                value={ubicacionReferencia}
+                onChange={(e) => setUbicacionReferencia(e.target.value)}
+                placeholder='Ej: "avenida Beni", "9no anillo"'
+              />
+              <p className="solo-lectura-nota" style={{ marginTop: -8, marginBottom: 12 }}>
+                Si lo completás, solo se cruzan inmuebles/referencias cuya ubicación mencione este
+                texto (además de las zonas y el presupuesto).
+              </p>
+
               <div className="form-row">
                 <div>
                   <label>Presupuesto mínimo ($us)</label>
@@ -213,41 +304,6 @@ export default function NuevoRequerimiento() {
             {enviando ? 'Guardando...' : 'Guardar requerimiento'}
           </button>
         </form>
-
-        {resultado && (
-          <div className="card" style={{ marginTop: 16 }}>
-            <h3 style={{ color: '#06416A', marginTop: 0 }}>
-              {resultado.inmuebles.length + resultado.referencias.length > 0
-                ? `Encontramos ${resultado.inmuebles.length + resultado.referencias.length} coincidencia(s) ahora mismo`
-                : 'No hay coincidencias todavía'}
-            </h3>
-            {resultado.inmuebles.map((i) => (
-              <p key={`i-${i.id}`} style={{ margin: '8px 0' }}>
-                🏠 <b>Propio:</b> {i.nombre || i.ubicacion || `Inmueble #${i.id}`} — $us {i.precio_venta ?? '—'}
-                <br />
-                <span style={{ fontSize: 13, color: '#555' }}>
-                  Asesor: {i.captador?.nombre || '—'}
-                  {i.captador?.telefono ? ` · ${i.captador.telefono}` : ''}
-                </span>
-              </p>
-            ))}
-            {resultado.referencias.map((r) => (
-              <p key={`r-${r.id}`} style={{ margin: '8px 0' }}>
-                📲 <b>Referencia:</b> {r.ubicacion || r.descripcion?.slice(0, 60) || 'Sin ubicación'} —{' '}
-                {r.precio ? `${r.moneda === 'bob' ? 'Bs.' : '$us'} ${r.precio}` : 'precio no informado'}
-                <br />
-                <span style={{ fontSize: 13, color: '#555' }}>
-                  Contacto: {r.contacto_nombre || '—'}
-                  {r.contacto_telefono ? ` · ${r.contacto_telefono}` : ''}
-                </span>
-              </p>
-            ))}
-            <p className="solo-lectura-nota" style={{ marginTop: 12 }}>
-              De ahora en más, cualquier referencia nueva que coincida con este requerimiento te va
-              a llegar automáticamente por Telegram (si tenés el bot activado).
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

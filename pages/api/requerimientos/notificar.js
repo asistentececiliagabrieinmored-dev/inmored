@@ -26,7 +26,7 @@ export default async function handler(req, res) {
   const { data: requerimiento } = await supabaseAdmin
     .from('requerimientos')
     .select(
-      'id, asesor_id, cliente_nombre, tipo_inmueble_id, tipo_transaccion_id, presupuesto_min, presupuesto_max, dormitorios_min'
+      'id, asesor_id, cliente_nombre, tipo_inmueble_id, tipo_transaccion_id, ubicacion_referencia, presupuesto_min, presupuesto_max, dormitorios_min'
     )
     .eq('id', requerimientoId)
     .maybeSingle();
@@ -47,6 +47,7 @@ export default async function handler(req, res) {
     tipoInmuebleId: requerimiento.tipo_inmueble_id,
     tipoTransaccionId: requerimiento.tipo_transaccion_id,
     zonaIds,
+    ubicacionReferencia: requerimiento.ubicacion_referencia,
     presupuestoMin: requerimiento.presupuesto_min,
     presupuestoMax: requerimiento.presupuesto_max,
     dormitoriosMin: requerimiento.dormitorios_min,
