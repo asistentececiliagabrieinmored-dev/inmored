@@ -33,7 +33,7 @@ export default function Inmuebles() {
       const { data, error } = await supabase
         .from('inmuebles')
         .select(
-          `id, ubicacion, precio_venta, estado, zona_id, tipo_inmueble_id,
+          `id, nombre, ubicacion, precio_venta, estado, zona_id, tipo_inmueble_id,
            captador:usuarios(nombre)`
         )
         .order('fecha_creacion', { ascending: false });
@@ -100,7 +100,10 @@ export default function Inmuebles() {
             style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}
           >
             <span className="badge">{inmueble.estado}</span>
-            <p style={{ margin: '8px 0 4px', fontWeight: 500 }}>
+            <p style={{ margin: '8px 0 2px', fontWeight: 700, fontSize: 16, color: '#06416A' }}>
+              {inmueble.nombre || 'Sin nombre registrado'}
+            </p>
+            <p style={{ margin: '0 0 4px', fontWeight: 500 }}>
               {inmueble.ubicacion || 'Sin ubicación registrada'}
             </p>
             <p style={{ margin: 0, color: '#555' }}>

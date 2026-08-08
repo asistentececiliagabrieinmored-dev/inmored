@@ -22,6 +22,7 @@ export default function CargaHistorica() {
 
   // Inmueble
   const [captadorId, setCaptadorId] = useState('');
+  const [nombreInmueble, setNombreInmueble] = useState('');
   const [fechaCaptacion, setFechaCaptacion] = useState('');
   const [tipoInmuebleId, setTipoInmuebleId] = useState('');
   const [tipoTransaccionId, setTipoTransaccionId] = useState('');
@@ -120,6 +121,7 @@ export default function CargaHistorica() {
           asesor_captador_id: captadorId,
           fecha_creacion: fechaCaptacion || null,
           zona_id: zonaId || null,
+          nombre: nombreInmueble,
           ubicacion,
           tipo_inmueble_id: tipoInmuebleId,
           tipo_transaccion_id: tipoTransaccionId,
@@ -226,6 +228,7 @@ export default function CargaHistorica() {
     setPropietarioNombre('');
     setPropietarioCi('');
     setPropietarioTelefono('');
+    setNombreInmueble('');
     setFechaCaptacion('');
     setTipoInmuebleId('');
     setTipoTransaccionId('');
@@ -410,6 +413,14 @@ export default function CargaHistorica() {
 
             <div className="form-section">
               <h3>Datos del inmueble</h3>
+
+              <label>Nombre del inmueble (referencia interna, ej: "Casa El Dorado")</label>
+              <input
+                type="text"
+                value={nombreInmueble}
+                onChange={(e) => setNombreInmueble(e.target.value)}
+                required
+              />
 
               <label>Fecha aproximada de captación original (si la sabes)</label>
               <input type="date" value={fechaCaptacion} onChange={(e) => setFechaCaptacion(e.target.value)} />
