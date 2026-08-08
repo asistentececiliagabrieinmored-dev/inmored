@@ -4,6 +4,7 @@ import {
   buscarRequerimientosCoincidentes,
   buscarCoincidenciasParaRequerimiento,
   formatearResumenCoincidencias,
+  normalizarParaComparar,
 } from '../../lib/matching';
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -74,12 +75,13 @@ async function enviarMensaje(chatId, texto) {
 
 function encontrarCoincidencia(valor, catalogo) {
   if (!valor) return null;
-  const normalizado = valor.trim().toLowerCase();
-  const exacto = catalogo.find((c) => c.nombre.toLowerCase() === normalizado);
+  const normalizado = normalizarParaComparar(valor);
+  const exacto = catalogo.find((c) => normalizarParaComparar(c.nombre) === normalizado);
   if (exacto) return exacto.id;
-  const parcial = catalogo.find(
-    (c) => normalizado.includes(c.nombre.toLowerCase()) || c.nombre.toLowerCase().includes(normalizado)
-  );
+  const parcial = catalogo.find((c) => {
+    const nombreNormalizado = normalizarParaComparar(c.nombre);
+    return normalizado.includes(nombreNormalizado) || nombreNormalizado.includes(normalizado);
+  });
   return parcial ? parcial.id : null;
 }
 
