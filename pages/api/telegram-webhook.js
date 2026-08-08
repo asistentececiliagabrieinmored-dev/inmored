@@ -1,9 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { supabaseAdmin } from '../../lib/supabaseAdmin';
+import { buscarRequerimientosCoincidentes } from '../../lib/matching';
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
-const RETENCION_DIAS_DEFECTO = 30;
+const RETENCION_DIAS_DEFECTO = 30; // fallback cuando no se identifica el tipo de transacción
+const RETENCION_DIAS_VENTA_DEFECTO = 60;
+const RETENCION_DIAS_ALQUILER_DEFECTO = 30;
 
 const anthropic = new Anthropic();
 
@@ -36,6 +39,7 @@ const ESQUEMA_REFERENCIA = {
       ],
     },
     dimensiones: nullableString('Superficie o dimensiones mencionadas (ej: "500 m2", "12x30").'),
+    dormitorios: nullableNumber('Cantidad de dormitorios mencionada, solo el número entero.'),
     contacto_nombre: nullableString('Nombre de la persona de contacto, si se menciona.'),
     contacto_telefono: nullableString('Teléfono de contacto, si se menciona.'),
     descripcion: { type: 'string', description: 'Resumen breve (1-2 frases) del inmueble, en español.' },
@@ -51,6 +55,7 @@ const ESQUEMA_REFERENCIA = {
     'contacto_telefono',
     'descripcion',
     'moneda',
+    'dormitorios',
   ],
   additionalProperties: false,
 };
@@ -150,17 +155,22 @@ async function manejarActivacion(chatId, texto, usuarioExistente) {
 async function procesarReferencia(usuario, chatId, mensaje) {
   const texto = mensaje.text.trim();
 
-  const [{ data: tiposInmueble }, { data: tiposTransaccion }, { data: zonas }, { data: configRetencion }] =
+  const [{ data: tiposInmueble }, { data: tiposTransaccion }, { data: zonas }, { data: configFilas }] =
     await Promise.all([
       supabaseAdmin.from('tipos_inmueble').select('id, nombre'),
       supabaseAdmin.from('tipos_transaccion').select('id, nombre'),
       supabaseAdmin.from('zonas').select('id, nombre'),
       supabaseAdmin
         .from('configuracion_sistema')
-        .select('valor')
-        .eq('clave', 'retencion_dias_referencias_externas')
-        .maybeSingle(),
+        .select('clave, valor')
+        .in('clave', [
+          'retencion_dias_referencias_venta',
+          'retencion_dias_referencias_alquiler_anticretico',
+          'retencion_dias_referencias_externas',
+        ]),
     ]);
+
+  const configPorClave = Object.fromEntries((configFilas || []).map((f) => [f.clave, f.valor]));
 
   let datos = null;
   try {
@@ -169,7 +179,24 @@ async function procesarReferencia(usuario, chatId, mensaje) {
     console.error('Error llamando a Claude:', err);
   }
 
-  const diasRetencion = Number(configRetencion?.valor) || RETENCION_DIAS_DEFECTO;
+  const tipoInmuebleId = encontrarCoincidencia(datos?.tipo_inmueble, tiposInmueble || []);
+  const tipoTransaccionId = encontrarCoincidencia(datos?.tipo_transaccion, tiposTransaccion || []);
+  const zonaId = encontrarCoincidencia(datos?.zona, zonas || []);
+
+  const tipoTransaccionNombre = (tiposTransaccion || [])
+    .find((t) => t.id === tipoTransaccionId)
+    ?.nombre?.toLowerCase();
+
+  let diasRetencion;
+  if (tipoTransaccionNombre === 'venta') {
+    diasRetencion = Number(configPorClave.retencion_dias_referencias_venta) || RETENCION_DIAS_VENTA_DEFECTO;
+  } else if (tipoTransaccionNombre === 'alquiler' || tipoTransaccionNombre === 'anticretico') {
+    diasRetencion =
+      Number(configPorClave.retencion_dias_referencias_alquiler_anticretico) || RETENCION_DIAS_ALQUILER_DEFECTO;
+  } else {
+    diasRetencion = Number(configPorClave.retencion_dias_referencias_externas) || RETENCION_DIAS_DEFECTO;
+  }
+
   const fechaExpiracion = new Date(Date.now() + diasRetencion * 24 * 60 * 60 * 1000);
 
   const { error: errorInsert } = await supabaseAdmin.from('referencias_externas').insert({
@@ -178,13 +205,14 @@ async function procesarReferencia(usuario, chatId, mensaje) {
     telegram_chat_id: chatId,
     telegram_message_id: String(mensaje.message_id),
     texto_original: texto,
-    tipo_inmueble_id: encontrarCoincidencia(datos?.tipo_inmueble, tiposInmueble || []),
-    tipo_transaccion_id: encontrarCoincidencia(datos?.tipo_transaccion, tiposTransaccion || []),
-    zona_id: encontrarCoincidencia(datos?.zona, zonas || []),
+    tipo_inmueble_id: tipoInmuebleId,
+    tipo_transaccion_id: tipoTransaccionId,
+    zona_id: zonaId,
     ubicacion: datos?.ubicacion || null,
     precio: datos?.precio || null,
     moneda: datos?.moneda || null,
     dimensiones: datos?.dimensiones || null,
+    dormitorios: datos?.dormitorios || null,
     descripcion: datos?.descripcion || texto.slice(0, 300),
     contacto_nombre: datos?.contacto_nombre || null,
     contacto_telefono: datos?.contacto_telefono || null,
@@ -195,6 +223,36 @@ async function procesarReferencia(usuario, chatId, mensaje) {
     console.error('Error guardando referencia externa:', errorInsert);
     await enviarMensaje(chatId, 'No pude guardar esa referencia. Probá reenviarla de nuevo en un rato.');
     return;
+  }
+
+  try {
+    const requerimientosCoincidentes = await buscarRequerimientosCoincidentes(supabaseAdmin, {
+      tipoInmuebleId,
+      tipoTransaccionId,
+      zonaId,
+      precio: datos?.precio || null,
+      moneda: datos?.moneda || null,
+      dormitorios: datos?.dormitorios || null,
+    });
+
+    for (const req of requerimientosCoincidentes) {
+      const { data: asesor } = await supabaseAdmin
+        .from('usuarios')
+        .select('telegram_chat_id, telegram_activo')
+        .eq('id', req.asesor_id)
+        .maybeSingle();
+
+      if (asesor?.telegram_activo && asesor.telegram_chat_id) {
+        await enviarMensaje(
+          asesor.telegram_chat_id,
+          `🔔 Nueva referencia que podría interesarle a tu cliente "${req.cliente_nombre}":\n\n${
+            datos?.descripcion || texto.slice(0, 200)
+          }`
+        );
+      }
+    }
+  } catch (err) {
+    console.error('Error buscando requerimientos coincidentes:', err);
   }
 
   const precioFormateado = datos?.precio
