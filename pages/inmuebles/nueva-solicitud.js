@@ -175,9 +175,7 @@ export default function NuevaSolicitud() {
           throw new Error(`Error al subir "${doc.label}": ${errorUpload.message}`);
         }
 
-        const { data: urlPublica } = supabase.storage.from(BUCKET).getPublicUrl(rutaArchivo);
-
-        const { error: errorDoc } = await supabase.from('documentos_solicitud').insert({
+         const { error: errorDoc } = await supabase.from('documentos_solicitud').insert({
           solicitud_id: solicitud.id,
           tipo_documento: doc.tipo,
           archivo_url: rutaArchivo,
