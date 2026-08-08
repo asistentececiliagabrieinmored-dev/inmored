@@ -21,7 +21,20 @@ const ESQUEMA_REFERENCIA = {
     tipo_transaccion: nullableString('Tipo de transacción: venta, alquiler o anticrético.'),
     zona: nullableString('Zona o barrio de Santa Cruz de la Sierra mencionado.'),
     ubicacion: nullableString('Dirección o referencia de ubicación exacta, si se menciona.'),
-    precio: nullableNumber('Precio en dólares americanos, solo el valor numérico, sin símbolos.'),
+    precio: nullableNumber(
+      'Precio del inmueble tal cual aparece en el mensaje, solo el valor numérico sin símbolos. ' +
+        'No convertir de moneda: si dice "Bs. 22.000" el valor es 22000, no una conversión a dólares.'
+    ),
+    moneda: {
+      anyOf: [
+        {
+          type: 'string',
+          enum: ['usd', 'bob'],
+          description: 'Moneda del precio: "usd" si está en dólares americanos, "bob" si está en bolivianos (Bs.).',
+        },
+        { type: 'null' },
+      ],
+    },
     dimensiones: nullableString('Superficie o dimensiones mencionadas (ej: "500 m2", "12x30").'),
     contacto_nombre: nullableString('Nombre de la persona de contacto, si se menciona.'),
     contacto_telefono: nullableString('Teléfono de contacto, si se menciona.'),
@@ -37,6 +50,7 @@ const ESQUEMA_REFERENCIA = {
     'contacto_nombre',
     'contacto_telefono',
     'descripcion',
+    'moneda',
   ],
   additionalProperties: false,
 };
@@ -169,6 +183,7 @@ async function procesarReferencia(usuario, chatId, mensaje) {
     zona_id: encontrarCoincidencia(datos?.zona, zonas || []),
     ubicacion: datos?.ubicacion || null,
     precio: datos?.precio || null,
+    moneda: datos?.moneda || null,
     dimensiones: datos?.dimensiones || null,
     descripcion: datos?.descripcion || texto.slice(0, 300),
     contacto_nombre: datos?.contacto_nombre || null,
@@ -182,11 +197,15 @@ async function procesarReferencia(usuario, chatId, mensaje) {
     return;
   }
 
+  const precioFormateado = datos?.precio
+    ? `${datos.moneda === 'bob' ? 'Bs.' : '$us'} ${datos.precio}`
+    : null;
+
   const resumen = [
     datos?.tipo_inmueble ? `Tipo: ${datos.tipo_inmueble}` : null,
     datos?.tipo_transaccion ? `Transacción: ${datos.tipo_transaccion}` : null,
     datos?.zona ? `Zona: ${datos.zona}` : null,
-    datos?.precio ? `Precio: $us ${datos.precio}` : null,
+    precioFormateado ? `Precio: ${precioFormateado}` : null,
   ]
     .filter(Boolean)
     .join(' · ');
