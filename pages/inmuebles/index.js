@@ -8,9 +8,23 @@ export default function Inmuebles() {
   const [cargando, setCargando] = useState(true);
   const [usuarioEmail, setUsuarioEmail] = useState('');
   const [rolNombre, setRolNombre] = useState(null);
+  const [sesionLista, setSesionLista] = useState(false);
+
+  const [tiposInmueble, setTiposInmueble] = useState([]);
+  const [tiposTransaccion, setTiposTransaccion] = useState([]);
+  const [captadores, setCaptadores] = useState([]);
+
+  const [filtroTipoInmuebleId, setFiltroTipoInmuebleId] = useState('');
+  const [filtroTipoTransaccionId, setFiltroTipoTransaccionId] = useState('');
+  const [filtroCaptadorId, setFiltroCaptadorId] = useState('');
+  const [filtroFechaDesde, setFiltroFechaDesde] = useState('');
+  const [filtroFechaHasta, setFiltroFechaHasta] = useState('');
+
+  const hayFiltrosActivos =
+    filtroTipoInmuebleId || filtroTipoTransaccionId || filtroCaptadorId || filtroFechaDesde || filtroFechaHasta;
 
   useEffect(() => {
-    async function cargarDatos() {
+    async function iniciar() {
       const { data: sessionData } = await supabase.auth.getSession();
 
       if (!sessionData.session) {
@@ -30,7 +44,28 @@ export default function Inmuebles() {
         setRolNombre(usuarioFila.rol.nombre);
       }
 
-      const { data, error } = await supabase
+      const [{ data: tiposInm }, { data: tiposTrans }, { data: usuariosData }] = await Promise.all([
+        supabase.from('tipos_inmueble').select('id, nombre').order('id'),
+        supabase.from('tipos_transaccion').select('id, nombre').order('id'),
+        supabase.from('usuarios').select('id, nombre').eq('activo', true).order('nombre'),
+      ]);
+
+      setTiposInmueble(tiposInm || []);
+      setTiposTransaccion(tiposTrans || []);
+      setCaptadores(usuariosData || []);
+      setSesionLista(true);
+    }
+
+    iniciar();
+  }, [router]);
+
+  useEffect(() => {
+    if (!sesionLista) return;
+
+    async function cargarInmuebles() {
+      setCargando(true);
+
+      let query = supabase
         .from('inmuebles')
         .select(
           `id, nombre, ubicacion, precio_venta, estado, zona_id, tipo_inmueble_id,
@@ -38,15 +73,27 @@ export default function Inmuebles() {
         )
         .order('fecha_creacion', { ascending: false });
 
-      if (!error) {
-        setInmuebles(data || []);
-      }
+      if (filtroTipoInmuebleId) query = query.eq('tipo_inmueble_id', filtroTipoInmuebleId);
+      if (filtroTipoTransaccionId) query = query.eq('tipo_transaccion_id', filtroTipoTransaccionId);
+      if (filtroCaptadorId) query = query.eq('asesor_captador_id', filtroCaptadorId);
+      if (filtroFechaDesde) query = query.gte('fecha_creacion', filtroFechaDesde);
+      if (filtroFechaHasta) query = query.lte('fecha_creacion', filtroFechaHasta);
 
+      const { data, error } = await query;
+      if (!error) setInmuebles(data || []);
       setCargando(false);
     }
 
-    cargarDatos();
-  }, [router]);
+    cargarInmuebles();
+  }, [sesionLista, filtroTipoInmuebleId, filtroTipoTransaccionId, filtroCaptadorId, filtroFechaDesde, filtroFechaHasta]);
+
+  function handleLimpiarFiltros() {
+    setFiltroTipoInmuebleId('');
+    setFiltroTipoTransaccionId('');
+    setFiltroCaptadorId('');
+    setFiltroFechaDesde('');
+    setFiltroFechaHasta('');
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -83,12 +130,63 @@ export default function Inmuebles() {
           </div>
         </div>
 
+        <div className="card">
+          <h3 style={{ color: '#06416A', marginTop: 0 }}>Filtros</h3>
+          <div className="form-row">
+            <div>
+              <label>Tipo de inmueble</label>
+              <select value={filtroTipoInmuebleId} onChange={(e) => setFiltroTipoInmuebleId(e.target.value)}>
+                <option value="">Todos</option>
+                {tiposInmueble.map((t) => (
+                  <option key={t.id} value={t.id}>{t.nombre}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label>Tipo de transacción</label>
+              <select value={filtroTipoTransaccionId} onChange={(e) => setFiltroTipoTransaccionId(e.target.value)}>
+                <option value="">Todos</option>
+                {tiposTransaccion.map((t) => (
+                  <option key={t.id} value={t.id}>{t.nombre}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="form-row">
+            <div>
+              <label>Fecha de captación desde</label>
+              <input type="date" value={filtroFechaDesde} onChange={(e) => setFiltroFechaDesde(e.target.value)} />
+            </div>
+            <div>
+              <label>Fecha de captación hasta</label>
+              <input type="date" value={filtroFechaHasta} onChange={(e) => setFiltroFechaHasta(e.target.value)} />
+            </div>
+          </div>
+          <div className="form-row">
+            <div>
+              <label>Captador</label>
+              <select value={filtroCaptadorId} onChange={(e) => setFiltroCaptadorId(e.target.value)}>
+                <option value="">Todos</option>
+                {captadores.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <button type="button" onClick={handleLimpiarFiltros} className="btn-secondary" style={{ width: '100%' }}>
+                Limpiar filtros
+              </button>
+            </div>
+          </div>
+        </div>
+
         {cargando && <p>Cargando...</p>}
 
         {!cargando && inmuebles.length === 0 && (
           <p>
-            Todavía no hay inmuebles cargados en la base de datos. Esto es
-            normal si recién creaste el proyecto.
+            {hayFiltrosActivos
+              ? 'No hay inmuebles que coincidan con estos filtros.'
+              : 'Todavía no hay inmuebles cargados en la base de datos. Esto es normal si recién creaste el proyecto.'}
           </p>
         )}
 
