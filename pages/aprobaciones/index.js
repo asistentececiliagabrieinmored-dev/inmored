@@ -124,7 +124,7 @@ export default function Aprobaciones() {
           >
             <span className="badge">{ESTADO_LABEL[s.estado] || s.estado}</span>
             {s.nombre_inmueble && (
-              <p style={{ margin: '8px 0 2px', fontWeight: 700, fontSize: 16 }}>
+              <p style={{ margin: '8px 0 2px', fontWeight: 700, fontSize: 16,color: '#06416A' }}>
                 {s.nombre_inmueble}
               </p>
             )}
