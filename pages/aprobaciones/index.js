@@ -35,7 +35,7 @@ export default function Aprobaciones() {
       let query = supabase
         .from('solicitudes_captacion')
         .select(
-          `id, estado, fecha_envio, dimensiones, dormitorios,
+          `id, estado, fecha_envio, dimensiones, dormitorios, nombre_inmueble,
            tipo_inmueble:tipos_inmueble(nombre),
            tipo_transaccion:tipos_transaccion(nombre),
            propietario:propietarios(nombre),
@@ -127,6 +127,11 @@ export default function Aprobaciones() {
               {s.propietario?.nombre || 'Propietario sin nombre'} —{' '}
               {s.tipo_inmueble?.nombre} en {s.tipo_transaccion?.nombre}
             </p>
+            {s.nombre_inmueble && (
+              <p style={{ margin: '0 0 4px', color: '#06416A', fontSize: 13, fontWeight: 500 }}>
+                {s.nombre_inmueble}
+              </p>
+            )}
             <p style={{ margin: 0, color: '#555', fontSize: 13 }}>
               Asesor: {s.asesor?.nombre || s.asesor?.email} · Enviado:{' '}
               {new Date(s.fecha_envio).toLocaleString('es-BO')}
