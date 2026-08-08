@@ -123,15 +123,15 @@ export default function Aprobaciones() {
             style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}
           >
             <span className="badge">{ESTADO_LABEL[s.estado] || s.estado}</span>
-            <p style={{ margin: '8px 0 4px', fontWeight: 500 }}>
-              {s.propietario?.nombre || 'Propietario sin nombre'} —{' '}
-              {s.tipo_inmueble?.nombre} en {s.tipo_transaccion?.nombre}
-            </p>
             {s.nombre_inmueble && (
-              <p style={{ margin: '0 0 4px', color: '#06416A', fontSize: 13, fontWeight: 500 }}>
+              <p style={{ margin: '8px 0 2px', fontWeight: 700, fontSize: 16 }}>
                 {s.nombre_inmueble}
               </p>
             )}
+            <p style={{ margin: '0 0 4px', fontWeight: 500 }}>
+              {s.propietario?.nombre || 'Propietario sin nombre'} —{' '}
+              {s.tipo_inmueble?.nombre} en {s.tipo_transaccion?.nombre}
+            </p>
             <p style={{ margin: 0, color: '#555', fontSize: 13 }}>
               Asesor: {s.asesor?.nombre || s.asesor?.email} · Enviado:{' '}
               {new Date(s.fecha_envio).toLocaleString('es-BO')}
