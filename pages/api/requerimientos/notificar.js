@@ -64,11 +64,21 @@ export default async function handler(req, res) {
         `🔔 Encontré ${inmuebles.length + referencias.length} coincidencia(s) para "${requerimiento.cliente_nombre}":`,
       ];
       inmuebles.forEach((i) => {
-        lineas.push(`• [Propio] ${i.nombre || i.ubicacion || `Inmueble #${i.id}`} — $us ${i.precio_venta ?? '?'}`);
+        const asesorTexto = i.captador?.nombre
+          ? `${i.captador.nombre}${i.captador.telefono ? ` (${i.captador.telefono})` : ''}`
+          : 'sin asesor asignado';
+        lineas.push(
+          `• [Propio] ${i.nombre || i.ubicacion || `Inmueble #${i.id}`} — $us ${i.precio_venta ?? '?'} — Asesor: ${asesorTexto}`
+        );
       });
       referencias.forEach((r) => {
         const precioTexto = r.precio ? `${r.moneda === 'bob' ? 'Bs.' : '$us'} ${r.precio}` : 'precio no informado';
-        lineas.push(`• [Referencia] ${r.ubicacion || r.descripcion?.slice(0, 60) || 'Sin ubicación'} — ${precioTexto}`);
+        const contactoTexto = r.contacto_nombre
+          ? `${r.contacto_nombre}${r.contacto_telefono ? ` (${r.contacto_telefono})` : ''}`
+          : 'sin contacto';
+        lineas.push(
+          `• [Referencia] ${r.ubicacion || r.descripcion?.slice(0, 60) || 'Sin ubicación'} — ${precioTexto} — Contacto: ${contactoTexto}`
+        );
       });
       await enviarMensajeTelegram(asesor.telegram_chat_id, lineas.join('\n'));
     }

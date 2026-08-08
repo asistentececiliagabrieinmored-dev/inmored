@@ -222,14 +222,24 @@ export default function NuevoRequerimiento() {
                 : 'No hay coincidencias todavía'}
             </h3>
             {resultado.inmuebles.map((i) => (
-              <p key={`i-${i.id}`} style={{ margin: '4px 0' }}>
+              <p key={`i-${i.id}`} style={{ margin: '8px 0' }}>
                 🏠 <b>Propio:</b> {i.nombre || i.ubicacion || `Inmueble #${i.id}`} — $us {i.precio_venta ?? '—'}
+                <br />
+                <span style={{ fontSize: 13, color: '#555' }}>
+                  Asesor: {i.captador?.nombre || '—'}
+                  {i.captador?.telefono ? ` · ${i.captador.telefono}` : ''}
+                </span>
               </p>
             ))}
             {resultado.referencias.map((r) => (
-              <p key={`r-${r.id}`} style={{ margin: '4px 0' }}>
+              <p key={`r-${r.id}`} style={{ margin: '8px 0' }}>
                 📲 <b>Referencia:</b> {r.ubicacion || r.descripcion?.slice(0, 60) || 'Sin ubicación'} —{' '}
                 {r.precio ? `${r.moneda === 'bob' ? 'Bs.' : '$us'} ${r.precio}` : 'precio no informado'}
+                <br />
+                <span style={{ fontSize: 13, color: '#555' }}>
+                  Contacto: {r.contacto_nombre || '—'}
+                  {r.contacto_telefono ? ` · ${r.contacto_telefono}` : ''}
+                </span>
               </p>
             ))}
             <p className="solo-lectura-nota" style={{ marginTop: 12 }}>
