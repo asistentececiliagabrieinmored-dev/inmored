@@ -1,6 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { supabaseAdmin } from '../../lib/supabaseAdmin';
-import { buscarRequerimientosCoincidentes } from '../../lib/matching';
+import {
+  buscarRequerimientosCoincidentes,
+  buscarCoincidenciasParaRequerimiento,
+  formatearResumenCoincidencias,
+} from '../../lib/matching';
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
@@ -90,6 +94,93 @@ async function extraerDatosReferencia(texto) {
     messages: [{ role: 'user', content: texto }],
     output_config: {
       format: { type: 'json_schema', schema: ESQUEMA_REFERENCIA },
+    },
+  });
+
+  const bloqueTexto = respuesta.content.find((b) => b.type === 'text');
+  return bloqueTexto ? JSON.parse(bloqueTexto.text) : null;
+}
+
+function construirEsquemaRequerimiento({ tiposInmueble, tiposTransaccion, zonas }) {
+  return {
+    type: 'object',
+    properties: {
+      clienteNombre: { type: 'string', description: 'Nombre del cliente que está buscando el inmueble.' },
+      clienteTelefono: nullableString('Teléfono del cliente, si se menciona.'),
+      tipoInmuebleId: {
+        anyOf: [
+          {
+            type: 'integer',
+            enum: tiposInmueble.map((t) => t.id),
+            description: 'ID del tipo de inmueble que más se ajusta, de la lista dada en el system prompt.',
+          },
+          { type: 'null' },
+        ],
+      },
+      tipoTransaccionId: {
+        anyOf: [
+          {
+            type: 'integer',
+            enum: tiposTransaccion.map((t) => t.id),
+            description: 'ID del tipo de transacción que más se ajusta, de la lista dada en el system prompt.',
+          },
+          { type: 'null' },
+        ],
+      },
+      zonaIds: {
+        type: 'array',
+        items: { type: 'integer', enum: zonas.map((z) => z.id) },
+        description:
+          'IDs de las zonas mencionadas o razonablemente equivalentes, de la lista dada en el system prompt. ' +
+          'Array vacío si no se menciona ninguna zona o ninguna se parece lo suficiente.',
+      },
+      ubicacionReferencia: nullableString(
+        'Ubicación específica mencionada (avenida, anillo, barrio puntual) que no sea exactamente una de las zonas listadas.'
+      ),
+      presupuestoMin: nullableNumber('Presupuesto mínimo mencionado, en dólares.'),
+      presupuestoMax: nullableNumber('Presupuesto máximo mencionado, en dólares.'),
+      dormitoriosMin: nullableNumber('Cantidad mínima de dormitorios mencionada.'),
+      descripcion: { type: 'string', description: 'Resumen breve (1-2 frases) de otros detalles del requerimiento.' },
+    },
+    required: [
+      'clienteNombre',
+      'clienteTelefono',
+      'tipoInmuebleId',
+      'tipoTransaccionId',
+      'zonaIds',
+      'ubicacionReferencia',
+      'presupuestoMin',
+      'presupuestoMax',
+      'dormitoriosMin',
+      'descripcion',
+    ],
+    additionalProperties: false,
+  };
+}
+
+async function extraerDatosRequerimiento(texto, catalogos) {
+  const { tiposInmueble, tiposTransaccion, zonas } = catalogos;
+
+  const listaTipos = tiposInmueble.map((t) => `${t.id}=${t.nombre}`).join(', ');
+  const listaTransacciones = tiposTransaccion.map((t) => `${t.id}=${t.nombre}`).join(', ');
+  const listaZonas = zonas.map((z) => `${z.id}=${z.nombre}`).join(', ');
+
+  const respuesta = await anthropic.messages.create({
+    model: 'claude-haiku-4-5',
+    max_tokens: 1024,
+    system:
+      'Extraés los datos de un requerimiento de un cliente (lo que un asesor inmobiliario escribe sobre lo ' +
+      'que su cliente está buscando) en Santa Cruz de la Sierra, Bolivia.\n\n' +
+      `Tipos de inmueble disponibles (id=nombre): ${listaTipos}\n` +
+      `Tipos de transacción disponibles (id=nombre): ${listaTransacciones}\n` +
+      `Zonas disponibles (id=nombre): ${listaZonas}\n\n` +
+      'Para zonaIds: elegí la o las zonas más parecidas de la lista si el cliente menciona algo que se le ' +
+      'parece razonablemente (sinónimos, variantes de escritura, zona vecina conocida), aunque no sea ' +
+      'exactamente igual. Dejá el array vacío si no se menciona ninguna zona o ninguna se parece lo suficiente. ' +
+      'No inventes información que no esté en el mensaje.',
+    messages: [{ role: 'user', content: texto }],
+    output_config: {
+      format: { type: 'json_schema', schema: construirEsquemaRequerimiento(catalogos) },
     },
   });
 
@@ -277,8 +368,81 @@ async function procesarReferencia(usuario, chatId, mensaje) {
   );
 }
 
-async function manejarComando(chatId, texto, usuario) {
+async function manejarNuevoRequerimiento(chatId, textoLibre, usuario) {
+  const [{ data: tiposInmueble }, { data: tiposTransaccion }, { data: zonas }] = await Promise.all([
+    supabaseAdmin.from('tipos_inmueble').select('id, nombre'),
+    supabaseAdmin.from('tipos_transaccion').select('id, nombre'),
+    supabaseAdmin.from('zonas').select('id, nombre'),
+  ]);
+
+  const catalogos = { tiposInmueble: tiposInmueble || [], tiposTransaccion: tiposTransaccion || [], zonas: zonas || [] };
+
+  let datos = null;
+  try {
+    datos = await extraerDatosRequerimiento(textoLibre, catalogos);
+  } catch (err) {
+    console.error('Error llamando a Claude para requerimiento:', err);
+  }
+
+  if (!datos?.clienteNombre) {
+    await enviarMensaje(
+      chatId,
+      'No pude identificar el nombre del cliente. Escribilo explícitamente, por ejemplo:\n' +
+        '/requerimiento Juan busca casa en Equipetrol, hasta 180000, 3 dormitorios, tel 70011223'
+    );
+    return;
+  }
+
+  const { data: requerimiento, error: errorInsert } = await supabaseAdmin
+    .from('requerimientos')
+    .insert({
+      asesor_id: usuario.id,
+      cliente_nombre: datos.clienteNombre,
+      cliente_telefono: datos.clienteTelefono || null,
+      tipo_inmueble_id: datos.tipoInmuebleId || null,
+      tipo_transaccion_id: datos.tipoTransaccionId || null,
+      ubicacion_referencia: datos.ubicacionReferencia || null,
+      presupuesto_min: datos.presupuestoMin || null,
+      presupuesto_max: datos.presupuestoMax || null,
+      dormitorios_min: datos.dormitoriosMin || null,
+      descripcion: datos.descripcion || null,
+    })
+    .select()
+    .single();
+
+  if (errorInsert) {
+    console.error('Error guardando requerimiento desde el bot:', errorInsert);
+    await enviarMensaje(chatId, 'No pude guardar el requerimiento. Probá de nuevo en un rato.');
+    return;
+  }
+
+  if (datos.zonaIds && datos.zonaIds.length > 0) {
+    await supabaseAdmin
+      .from('requerimiento_zonas')
+      .insert(datos.zonaIds.map((zonaId) => ({ requerimiento_id: requerimiento.id, zona_id: zonaId })));
+  }
+
+  try {
+    const { inmuebles, referencias } = await buscarCoincidenciasParaRequerimiento(supabaseAdmin, {
+      tipoInmuebleId: datos.tipoInmuebleId,
+      tipoTransaccionId: datos.tipoTransaccionId,
+      zonaIds: datos.zonaIds || [],
+      ubicacionReferencia: datos.ubicacionReferencia,
+      presupuestoMin: datos.presupuestoMin,
+      presupuestoMax: datos.presupuestoMax,
+      dormitoriosMin: datos.dormitoriosMin,
+    });
+
+    await enviarMensaje(chatId, formatearResumenCoincidencias(datos.clienteNombre, inmuebles, referencias));
+  } catch (err) {
+    console.error('Error buscando coincidencias para requerimiento nuevo:', err);
+    await enviarMensaje(chatId, `Requerimiento guardado para "${datos.clienteNombre}".`);
+  }
+}
+
+async function manejarComando(chatId, texto, usuario, tieneAccesoVigente) {
   const comando = texto.split(/\s+/)[0].toLowerCase();
+  const resto = texto.slice(comando.length).trim();
 
   if (comando === '/ayuda' || comando === '/start') {
     await enviarMensaje(
@@ -287,7 +451,8 @@ async function manejarComando(chatId, texto, usuario) {
         (usuario?.telegram_activo
           ? 'Ya tenés tu acceso activo. Reenviame los inmuebles que veas en los grupos de WhatsApp y los guardo automáticamente.'
           : 'Para activar tu acceso, enviame el código de activación que te dio Romano.') +
-        '\n\nComandos disponibles:\n/ayuda — este mensaje\n/estado — ver si tu acceso está activo'
+        '\n\nComandos disponibles:\n/ayuda — este mensaje\n/estado — ver si tu acceso está activo\n' +
+        '/requerimiento <texto> — cargar lo que está buscando un cliente'
     );
     return;
   }
@@ -304,6 +469,23 @@ async function manejarComando(chatId, texto, usuario) {
         ? `Tu acceso está activo hasta el ${new Date(usuario.telegram_acceso_hasta).toLocaleDateString('es-BO')}.`
         : 'Todavía no activaste tu acceso. Enviame el código de activación que te dio Romano.'
     );
+    return;
+  }
+
+  if (comando === '/requerimiento') {
+    if (!tieneAccesoVigente) {
+      await enviarMensaje(chatId, 'Necesitás activar tu acceso primero. Enviame el código de activación que te dio Romano.');
+      return;
+    }
+    if (!resto) {
+      await enviarMensaje(
+        chatId,
+        'Escribí el requerimiento después del comando, por ejemplo:\n' +
+          '/requerimiento Juan busca casa en venta en Equipetrol o Las Palmas, hasta 180000, 3 dormitorios, tel 70011223'
+      );
+      return;
+    }
+    await manejarNuevoRequerimiento(chatId, resto, usuario);
     return;
   }
 
@@ -338,17 +520,17 @@ export default async function handler(req, res) {
       .eq('telegram_chat_id', chatId)
       .maybeSingle();
 
-    if (texto.startsWith('/')) {
-      await manejarComando(chatId, texto, usuario);
-      res.status(200).end();
-      return;
-    }
-
     const tieneAccesoVigente =
       usuario &&
       usuario.telegram_activo &&
       usuario.telegram_acceso_hasta &&
       new Date(usuario.telegram_acceso_hasta) > new Date();
+
+    if (texto.startsWith('/')) {
+      await manejarComando(chatId, texto, usuario, tieneAccesoVigente);
+      res.status(200).end();
+      return;
+    }
 
     if (!tieneAccesoVigente) {
       await manejarActivacion(chatId, texto, usuario);
