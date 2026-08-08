@@ -4,7 +4,6 @@ import {
   buscarRequerimientosCoincidentes,
   buscarCoincidenciasParaRequerimiento,
   formatearResumenCoincidencias,
-  normalizarParaComparar,
 } from '../../lib/matching';
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -22,48 +21,79 @@ const nullableNumber = (description) => ({
   anyOf: [{ type: 'number', description }, { type: 'null' }],
 });
 
-const ESQUEMA_REFERENCIA = {
-  type: 'object',
-  properties: {
-    tipo_inmueble: nullableString('Tipo de inmueble mencionado: casa, departamento, terreno, oficina, local, etc.'),
-    tipo_transaccion: nullableString('Tipo de transacción: venta, alquiler o anticrético.'),
-    zona: nullableString('Zona o barrio de Santa Cruz de la Sierra mencionado.'),
-    ubicacion: nullableString('Dirección o referencia de ubicación exacta, si se menciona.'),
-    precio: nullableNumber(
-      'Precio del inmueble tal cual aparece en el mensaje, solo el valor numérico sin símbolos. ' +
-        'No convertir de moneda: si dice "Bs. 22.000" el valor es 22000, no una conversión a dólares.'
-    ),
-    moneda: {
-      anyOf: [
-        {
-          type: 'string',
-          enum: ['usd', 'bob'],
-          description: 'Moneda del precio: "usd" si está en dólares americanos, "bob" si está en bolivianos (Bs.).',
-        },
-        { type: 'null' },
-      ],
+function construirEsquemaReferencia({ tiposInmueble, tiposTransaccion, zonas }) {
+  return {
+    type: 'object',
+    properties: {
+      tipoInmuebleId: {
+        anyOf: [
+          {
+            type: 'integer',
+            enum: tiposInmueble.map((t) => t.id),
+            description: 'ID del tipo de inmueble que más se ajusta, de la lista dada en el system prompt.',
+          },
+          { type: 'null' },
+        ],
+      },
+      tipoTransaccionId: {
+        anyOf: [
+          {
+            type: 'integer',
+            enum: tiposTransaccion.map((t) => t.id),
+            description: 'ID del tipo de transacción que más se ajusta, de la lista dada en el system prompt.',
+          },
+          { type: 'null' },
+        ],
+      },
+      zonaId: {
+        anyOf: [
+          {
+            type: 'integer',
+            enum: zonas.map((z) => z.id),
+            description:
+              'ID de la zona mencionada o razonablemente equivalente, de la lista dada en el system prompt. ' +
+              'null si no se menciona ninguna zona identificable.',
+          },
+          { type: 'null' },
+        ],
+      },
+      ubicacion: nullableString('Dirección o referencia de ubicación exacta, si se menciona.'),
+      precio: nullableNumber(
+        'Precio del inmueble tal cual aparece en el mensaje, solo el valor numérico sin símbolos. ' +
+          'No convertir de moneda: si dice "Bs. 22.000" el valor es 22000, no una conversión a dólares.'
+      ),
+      moneda: {
+        anyOf: [
+          {
+            type: 'string',
+            enum: ['usd', 'bob'],
+            description: 'Moneda del precio: "usd" si está en dólares americanos, "bob" si está en bolivianos (Bs.).',
+          },
+          { type: 'null' },
+        ],
+      },
+      dimensiones: nullableString('Superficie o dimensiones mencionadas (ej: "500 m2", "12x30").'),
+      dormitorios: nullableNumber('Cantidad de dormitorios mencionada, solo el número entero.'),
+      contacto_nombre: nullableString('Nombre de la persona de contacto, si se menciona.'),
+      contacto_telefono: nullableString('Teléfono de contacto, si se menciona.'),
+      descripcion: { type: 'string', description: 'Resumen breve (1-2 frases) del inmueble, en español.' },
     },
-    dimensiones: nullableString('Superficie o dimensiones mencionadas (ej: "500 m2", "12x30").'),
-    dormitorios: nullableNumber('Cantidad de dormitorios mencionada, solo el número entero.'),
-    contacto_nombre: nullableString('Nombre de la persona de contacto, si se menciona.'),
-    contacto_telefono: nullableString('Teléfono de contacto, si se menciona.'),
-    descripcion: { type: 'string', description: 'Resumen breve (1-2 frases) del inmueble, en español.' },
-  },
-  required: [
-    'tipo_inmueble',
-    'tipo_transaccion',
-    'zona',
-    'ubicacion',
-    'precio',
-    'dimensiones',
-    'contacto_nombre',
-    'contacto_telefono',
-    'descripcion',
-    'moneda',
-    'dormitorios',
-  ],
-  additionalProperties: false,
-};
+    required: [
+      'tipoInmuebleId',
+      'tipoTransaccionId',
+      'zonaId',
+      'ubicacion',
+      'precio',
+      'dimensiones',
+      'contacto_nombre',
+      'contacto_telefono',
+      'descripcion',
+      'moneda',
+      'dormitorios',
+    ],
+    additionalProperties: false,
+  };
+}
 
 async function enviarMensaje(chatId, texto) {
   await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
@@ -73,29 +103,30 @@ async function enviarMensaje(chatId, texto) {
   });
 }
 
-function encontrarCoincidencia(valor, catalogo) {
-  if (!valor) return null;
-  const normalizado = normalizarParaComparar(valor);
-  const exacto = catalogo.find((c) => normalizarParaComparar(c.nombre) === normalizado);
-  if (exacto) return exacto.id;
-  const parcial = catalogo.find((c) => {
-    const nombreNormalizado = normalizarParaComparar(c.nombre);
-    return normalizado.includes(nombreNormalizado) || nombreNormalizado.includes(normalizado);
-  });
-  return parcial ? parcial.id : null;
-}
+async function extraerDatosReferencia(texto, catalogos) {
+  const { tiposInmueble, tiposTransaccion, zonas } = catalogos;
 
-async function extraerDatosReferencia(texto) {
+  const listaTipos = tiposInmueble.map((t) => `${t.id}=${t.nombre}`).join(', ');
+  const listaTransacciones = tiposTransaccion.map((t) => `${t.id}=${t.nombre}`).join(', ');
+  const listaZonas = zonas.map((z) => `${z.id}=${z.nombre}`).join(', ');
+
   const respuesta = await anthropic.messages.create({
     model: 'claude-haiku-4-5',
     max_tokens: 1024,
     system:
       'Extraés datos estructurados de mensajes de WhatsApp reenviados que describen inmuebles ' +
-      'en venta, alquiler o anticrético en Santa Cruz de la Sierra, Bolivia. Si un dato no aparece ' +
-      'en el texto, dejalo en null. No inventes información que no esté en el mensaje.',
+      'en venta, alquiler o anticrético en Santa Cruz de la Sierra, Bolivia.\n\n' +
+      `Tipos de inmueble disponibles (id=nombre): ${listaTipos}\n` +
+      `Tipos de transacción disponibles (id=nombre): ${listaTransacciones}\n` +
+      `Zonas disponibles (id=nombre): ${listaZonas}\n\n` +
+      'Elegí el ID que mejor corresponda de cada lista, aunque el mensaje no use exactamente el mismo texto ' +
+      '(con o sin tildes, mayúsculas, abreviado, etc.) — vos entendés el significado, no hace falta una ' +
+      'coincidencia literal. Para zonaId, dejalo en null si no podés identificar razonablemente a qué zona de ' +
+      'la lista corresponde. Si un dato no aparece en el texto, dejalo en null. No inventes información que no ' +
+      'esté en el mensaje.',
     messages: [{ role: 'user', content: texto }],
     output_config: {
-      format: { type: 'json_schema', schema: ESQUEMA_REFERENCIA },
+      format: { type: 'json_schema', schema: construirEsquemaReferencia(catalogos) },
     },
   });
 
@@ -262,21 +293,24 @@ async function procesarReferencia(usuario, chatId, mensaje) {
     ]);
 
   const configPorClave = Object.fromEntries((configFilas || []).map((f) => [f.clave, f.valor]));
+  const catalogos = { tiposInmueble: tiposInmueble || [], tiposTransaccion: tiposTransaccion || [], zonas: zonas || [] };
 
   let datos = null;
   try {
-    datos = await extraerDatosReferencia(texto);
+    datos = await extraerDatosReferencia(texto, catalogos);
   } catch (err) {
     console.error('Error llamando a Claude:', err);
   }
 
-  const tipoInmuebleId = encontrarCoincidencia(datos?.tipo_inmueble, tiposInmueble || []);
-  const tipoTransaccionId = encontrarCoincidencia(datos?.tipo_transaccion, tiposTransaccion || []);
-  const zonaId = encontrarCoincidencia(datos?.zona, zonas || []);
+  const tipoInmuebleId = datos?.tipoInmuebleId || null;
+  const tipoTransaccionId = datos?.tipoTransaccionId || null;
+  const zonaId = datos?.zonaId || null;
 
-  const tipoTransaccionNombre = (tiposTransaccion || [])
-    .find((t) => t.id === tipoTransaccionId)
-    ?.nombre?.toLowerCase();
+  const tipoInmuebleCatalogo = catalogos.tiposInmueble.find((t) => t.id === tipoInmuebleId);
+  const tipoTransaccionCatalogo = catalogos.tiposTransaccion.find((t) => t.id === tipoTransaccionId);
+  const zonaCatalogo = catalogos.zonas.find((z) => z.id === zonaId);
+
+  const tipoTransaccionNombre = tipoTransaccionCatalogo?.nombre?.toLowerCase();
 
   let diasRetencion;
   if (tipoTransaccionNombre === 'venta') {
@@ -352,9 +386,9 @@ async function procesarReferencia(usuario, chatId, mensaje) {
     : null;
 
   const resumen = [
-    datos?.tipo_inmueble ? `Tipo: ${datos.tipo_inmueble}` : null,
-    datos?.tipo_transaccion ? `Transacción: ${datos.tipo_transaccion}` : null,
-    datos?.zona ? `Zona: ${datos.zona}` : null,
+    tipoInmuebleCatalogo ? `Tipo: ${tipoInmuebleCatalogo.nombre}` : null,
+    tipoTransaccionCatalogo ? `Transacción: ${tipoTransaccionCatalogo.nombre}` : null,
+    zonaCatalogo ? `Zona: ${zonaCatalogo.nombre}` : null,
     precioFormateado ? `Precio: ${precioFormateado}` : null,
   ]
     .filter(Boolean)
