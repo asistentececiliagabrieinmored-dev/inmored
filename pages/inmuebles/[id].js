@@ -19,6 +19,7 @@ export default function DetalleInmueble() {
 
   // Formulario de datos
   const [zonaId, setZonaId] = useState('');
+  const [nombre, setNombre] = useState('');
   const [ubicacion, setUbicacion] = useState('');
   const [latitud, setLatitud] = useState('');
   const [longitud, setLongitud] = useState('');
@@ -50,7 +51,7 @@ export default function DetalleInmueble() {
     const { data: inm } = await supabase
       .from('inmuebles')
       .select(
-        `id, ubicacion, latitud, longitud, precio_venta, porcentaje_comision, estado,
+        `id, nombre, ubicacion, latitud, longitud, precio_venta, porcentaje_comision, estado,
          zona_id, dimensiones, dormitorios, banos, garajes, descripcion,
          tipo_inmueble:tipos_inmueble(nombre),
          tipo_transaccion:tipos_transaccion(nombre),
@@ -85,6 +86,7 @@ export default function DetalleInmueble() {
 
     if (inm) {
       setZonaId(inm.zona_id || '');
+      setNombre(inm.nombre || '');
       setUbicacion(inm.ubicacion || '');
       setLatitud(inm.latitud || '');
       setLongitud(inm.longitud || '');
@@ -105,6 +107,7 @@ export default function DetalleInmueble() {
         .from('inmuebles')
         .update({
           zona_id: zonaId || null,
+          nombre,
           ubicacion,
           latitud: latitud || null,
           longitud: longitud || null,
@@ -225,9 +228,10 @@ export default function DetalleInmueble() {
       </div>
 
       <div className="container">
-        <h2>
+        <h2 style={{ marginBottom: 0 }}>{inmueble.nombre || 'Sin nombre registrado'}</h2>
+        <p style={{ margin: '2px 0 8px', color: '#555' }}>
           {inmueble.tipo_inmueble?.nombre} en {inmueble.tipo_transaccion?.nombre} — #{inmueble.id}
-        </h2>
+        </p>
         <span className="badge">{inmueble.estado}</span>
 
         {mensaje && (
@@ -257,6 +261,9 @@ export default function DetalleInmueble() {
         <div className="card">
           <h3 style={{ color: '#06416A', marginTop: 0 }}>Zona, ubicación y precio</h3>
           <form onSubmit={handleGuardarDatos}>
+            <label>Nombre del inmueble (referencia interna)</label>
+            <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+
             <div className="form-row">
               <div>
                 <label>Zona</label>
