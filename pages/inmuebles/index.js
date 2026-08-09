@@ -194,13 +194,9 @@ export default function Inmuebles() {
         )}
 
         {inmuebles.map((inmueble) => (
-          <a
-            href={`/inmuebles/${inmueble.id}`}
-            className="card"
-            key={inmueble.id}
-            style={{ display: 'block', position: 'relative', textDecoration: 'none', color: 'inherit' }}
-          >
-            <span
+          <div key={inmueble.id} className="card" style={{ position: 'relative' }}>
+            <a
+              href={`/inmuebles/${inmueble.id}`}
               title="Editar"
               style={{
                 position: 'absolute',
@@ -227,7 +223,7 @@ export default function Inmuebles() {
                 <path d="M12 20h9" />
                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
               </svg>
-            </span>
+            </a>
             <span className="badge">{inmueble.estado}</span>
             <p style={{ margin: '8px 0 2px', fontWeight: 700, fontSize: 16, color: '#06416A', paddingRight: 40 }}>
               {inmueble.nombre || 'Sin nombre registrado'}
@@ -243,7 +239,7 @@ export default function Inmuebles() {
             <p style={{ margin: '4px 0 0', color: '#888', fontSize: 12 }}>
               Captador: {inmueble.captador?.nombre || '—'}
             </p>
-          </a>
+          </div>
         ))}
       </div>
     </div>
