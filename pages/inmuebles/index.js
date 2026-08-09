@@ -198,10 +198,38 @@ export default function Inmuebles() {
             href={`/inmuebles/${inmueble.id}`}
             className="card"
             key={inmueble.id}
-            style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}
+            style={{ display: 'block', position: 'relative', textDecoration: 'none', color: 'inherit' }}
           >
+            <span
+              title="Editar"
+              style={{
+                position: 'absolute',
+                top: 10,
+                right: 12,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 30,
+                height: 30,
+                color: '#666',
+              }}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="17"
+                height="17"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+            </span>
             <span className="badge">{inmueble.estado}</span>
-            <p style={{ margin: '8px 0 2px', fontWeight: 700, fontSize: 16, color: '#06416A' }}>
+            <p style={{ margin: '8px 0 2px', fontWeight: 700, fontSize: 16, color: '#06416A', paddingRight: 40 }}>
               {inmueble.nombre || 'Sin nombre registrado'}
             </p>
             <p style={{ margin: '0 0 4px', fontWeight: 500 }}>
