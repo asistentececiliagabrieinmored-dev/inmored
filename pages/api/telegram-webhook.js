@@ -77,6 +77,14 @@ function construirEsquemaReferencia({ tiposInmueble, tiposTransaccion, zonas }) 
       contacto_nombre: nullableString('Nombre de la persona de contacto, si se menciona.'),
       contacto_telefono: nullableString('Teléfono de contacto, si se menciona.'),
       descripcion: { type: 'string', description: 'Resumen breve (1-2 frases) del inmueble, en español.' },
+      pareceRequerimientoCliente: {
+        type: 'boolean',
+        description:
+          'true si el mensaje NO es un anuncio de un inmueble disponible, sino que el asesor está describiendo ' +
+          'lo que un cliente suyo está buscando/necesita (ej: "tengo un cliente que quiere comprar...", ' +
+          '"busco para un cliente..."). false en cualquier otro caso, incluyendo mensajes reenviados de ' +
+          'WhatsApp que anuncian un inmueble en venta/alquiler/anticrético.',
+      },
     },
     required: [
       'tipoInmuebleId',
@@ -90,6 +98,7 @@ function construirEsquemaReferencia({ tiposInmueble, tiposTransaccion, zonas }) 
       'descripcion',
       'moneda',
       'dormitorios',
+      'pareceRequerimientoCliente',
     ],
     additionalProperties: false,
   };
@@ -123,7 +132,10 @@ async function extraerDatosReferencia(texto, catalogos) {
       '(con o sin tildes, mayúsculas, abreviado, etc.) — vos entendés el significado, no hace falta una ' +
       'coincidencia literal. Para zonaId, dejalo en null si no podés identificar razonablemente a qué zona de ' +
       'la lista corresponde. Si un dato no aparece en el texto, dejalo en null. No inventes información que no ' +
-      'esté en el mensaje.',
+      'esté en el mensaje.\n\n' +
+      'Importante: algunos mensajes no son anuncios de inmuebles sino que el asesor está contando lo que un ' +
+      'cliente suyo busca (ej: "tengo un cliente que quiere comprar un depa en Equipetrol"). Detectá ese caso ' +
+      'con pareceRequerimientoCliente.',
     messages: [{ role: 'user', content: texto }],
     output_config: {
       format: { type: 'json_schema', schema: construirEsquemaReferencia(catalogos) },
@@ -311,6 +323,33 @@ async function procesarReferencia(usuario, chatId, mensaje) {
   const zonaCatalogo = catalogos.zonas.find((z) => z.id === zonaId);
 
   const tipoTransaccionNombre = tipoTransaccionCatalogo?.nombre?.toLowerCase();
+
+  if (datos?.pareceRequerimientoCliente) {
+    await enviarMensaje(
+      chatId,
+      'Ese mensaje parece describir lo que busca un cliente, no un inmueble disponible, así que no lo guardé ' +
+        'como referencia.\n\n' +
+        'Para cargar lo que busca tu cliente, usá el comando /requerimiento en dos líneas: primero el nombre ' +
+        'que le querés dar (vos elegís cuál, no hace falta el nombre real del cliente), Enter, y después qué ' +
+        'está buscando. Ejemplo:\n\n' +
+        '/requerimiento Cliente A - terreno Doble Vía\n' +
+        'Busca terreno en alquiler cerca de la avenida doble vía a la guardia, sin presupuesto definido'
+    );
+    return;
+  }
+
+  const tieneAlgunDatoUtil = Boolean(
+    tipoInmuebleId || tipoTransaccionId || zonaId || datos?.ubicacion || datos?.precio
+  );
+
+  if (datos && !tieneAlgunDatoUtil) {
+    await enviarMensaje(
+      chatId,
+      'No pude identificar ningún dato de un inmueble en ese mensaje (tipo, zona, ubicación o precio), así ' +
+        'que no lo guardé. Reenviame el anuncio completo tal cual llega por WhatsApp.'
+    );
+    return;
+  }
 
   let diasRetencion;
   if (tipoTransaccionNombre === 'venta') {
