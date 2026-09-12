@@ -190,9 +190,17 @@ label {
 
 .top-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 16px;
+}
+
+.top-actions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .galeria {

@@ -67,7 +67,7 @@ export default function Requerimientos() {
         <div className="top-actions">
           <h2 style={{ margin: 0 }}>Requerimientos</h2>
           <div>
-            <a href="/referencias" className="btn-secondary" style={{ marginRight: 8 }}>
+            <a href="/referencias" className="btn-secondary">
               Referencias externas
             </a>
             <a href="/requerimientos/nueva" className="btn-secondary">

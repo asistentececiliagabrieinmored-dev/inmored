@@ -117,17 +117,17 @@ export default function Inmuebles() {
           <h2 style={{ margin: 0 }}>Inmuebles</h2>
           <div>
             {rolNombre === 'gerente_operaciones' && (
-              <a href="/aprobaciones" className="btn-secondary" style={{ marginRight: 8 }}>
+              <a href="/aprobaciones" className="btn-secondary">
                 Aprobaciones pendientes
               </a>
             )}
-            <a href="/requerimientos" className="btn-secondary" style={{ marginRight: 8 }}>
+            <a href="/requerimientos" className="btn-secondary">
               Requerimientos
             </a>
-            <a href="/referencias" className="btn-secondary" style={{ marginRight: 8 }}>
+            <a href="/referencias" className="btn-secondary">
               Referencias externas
             </a>
-            <a href="/inmuebles/carga-historica" className="btn-secondary" style={{ marginRight: 8 }}>
+            <a href="/inmuebles/carga-historica" className="btn-secondary">
               Cargar inmueble histórico
             </a>
             <a href="/inmuebles/nueva-solicitud" className="btn-secondary">
