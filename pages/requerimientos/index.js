@@ -66,9 +66,14 @@ export default function Requerimientos() {
       <div className="container">
         <div className="top-actions">
           <h2 style={{ margin: 0 }}>Requerimientos</h2>
-          <a href="/requerimientos/nueva" className="btn-secondary">
-            + Nuevo requerimiento
-          </a>
+          <div>
+            <a href="/referencias" className="btn-secondary" style={{ marginRight: 8 }}>
+              Referencias externas
+            </a>
+            <a href="/requerimientos/nueva" className="btn-secondary">
+              + Nuevo requerimiento
+            </a>
+          </div>
         </div>
 
         <div style={{ marginBottom: 16 }}>
