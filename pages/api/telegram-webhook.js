@@ -5,6 +5,7 @@ import {
   buscarCoincidenciasParaRequerimiento,
   formatearResumenCoincidencias,
   formatearDetalleReferencia,
+  criteriosDesdeRequerimiento,
 } from '../../lib/matching';
 
 // Un mensaje puede encadenar varias llamadas a Claude (extracción de datos +
@@ -550,6 +551,76 @@ async function manejarNuevoRequerimiento(chatId, nombreRequerimiento, textoLibre
   }
 }
 
+// Corre el matching para todos los requerimientos activos del asesor y manda
+// un mensaje por cada uno que tenga coincidencias. Las búsquedas van en
+// paralelo porque cada una puede incluir una llamada a Claude (filtro de
+// ubicación) y en serie no entrarían en el tiempo máximo de la función.
+async function manejarVerCoincidencias(chatId, usuario) {
+  const { data: requerimientos } = await supabaseAdmin
+    .from('requerimientos')
+    .select(
+      'id, nombre_requerimiento, tipo_inmueble_id, tipo_transaccion_id, ubicacion_referencia, ' +
+        'presupuesto_min, presupuesto_max, dormitorios_min'
+    )
+    .eq('asesor_id', usuario.id)
+    .eq('estado', 'activo')
+    .order('id');
+
+  if (!requerimientos || requerimientos.length === 0) {
+    await enviarMensaje(
+      chatId,
+      'No tenés requerimientos activos. Cargá uno con /requerimiento (escribí /ayuda para ver el formato).'
+    );
+    return;
+  }
+
+  await enviarMensaje(chatId, `Buscando coincidencias para tus ${requerimientos.length} requerimiento(s) activo(s)…`);
+
+  const { data: zonasFilas } = await supabaseAdmin
+    .from('requerimiento_zonas')
+    .select('requerimiento_id, zona_id')
+    .in(
+      'requerimiento_id',
+      requerimientos.map((r) => r.id)
+    );
+
+  const resultados = await Promise.all(
+    requerimientos.map(async (req) => {
+      const zonaIds = (zonasFilas || []).filter((z) => z.requerimiento_id === req.id).map((z) => z.zona_id);
+      try {
+        const { inmuebles, referencias } = await buscarCoincidenciasParaRequerimiento(
+          supabaseAdmin,
+          criteriosDesdeRequerimiento(req, zonaIds)
+        );
+        return { req, inmuebles, referencias };
+      } catch (err) {
+        console.error(`Error buscando coincidencias del requerimiento ${req.id}:`, err);
+        return { req, error: true };
+      }
+    })
+  );
+
+  const conCoincidencias = resultados.filter((r) => !r.error && r.inmuebles.length + r.referencias.length > 0);
+  const sinCoincidencias = resultados.filter((r) => !r.error && r.inmuebles.length + r.referencias.length === 0);
+  const conError = resultados.filter((r) => r.error);
+
+  for (const { req, inmuebles, referencias } of conCoincidencias) {
+    await enviarMensaje(chatId, formatearResumenCoincidencias(req.nombre_requerimiento, inmuebles, referencias));
+  }
+
+  const cierre = [
+    conCoincidencias.length === 0 ? 'Por ahora ninguno de tus requerimientos tiene coincidencias.' : null,
+    sinCoincidencias.length > 0 && conCoincidencias.length > 0
+      ? `Sin coincidencias todavía: ${sinCoincidencias.map((r) => `"${r.req.nombre_requerimiento}"`).join(', ')}.`
+      : null,
+    conError.length > 0
+      ? `No pude revisar: ${conError.map((r) => `"${r.req.nombre_requerimiento}"`).join(', ')}. Probá de nuevo en un rato.`
+      : null,
+  ].filter(Boolean);
+
+  if (cierre.length > 0) await enviarMensaje(chatId, cierre.join('\n'));
+}
+
 async function manejarComando(chatId, texto, usuario, tieneAccesoVigente) {
   const comando = texto.split(/\s+/)[0].toLowerCase();
   const resto = texto.slice(comando.length).trim();
@@ -561,12 +632,22 @@ async function manejarComando(chatId, texto, usuario, tieneAccesoVigente) {
         (usuario?.telegram_activo
           ? 'Ya tenés tu acceso activo. Reenviame los inmuebles que veas en los grupos de WhatsApp y los guardo automáticamente.'
           : 'Para activar tu acceso, enviame el código de activación que te dio Romano.') +
-        '\n\nComandos disponibles:\n/ayuda — este mensaje\n/estado — ver si tu acceso está activo\n\n' +
+        '\n\nComandos disponibles:\n/ayuda — este mensaje\n/estado — ver si tu acceso está activo\n' +
+        '/coincidencias — ver las coincidencias actuales de todos tus requerimientos activos\n\n' +
         '/requerimiento — cargar lo que está buscando un cliente. Primera línea: nombre del requerimiento ' +
         '(vos elegís cuál, no hace falta el nombre real del cliente). Resto: qué busca. Ejemplo:\n' +
         '/requerimiento Cliente A - terreno Doble Vía\n' +
         'Busca terreno en alquiler cerca de la avenida doble vía a la guardia, sin presupuesto definido'
     );
+    return;
+  }
+
+  if (comando === '/coincidencias') {
+    if (!tieneAccesoVigente) {
+      await enviarMensaje(chatId, 'Necesitás activar tu acceso primero. Enviame el código de activación que te dio Romano.');
+      return;
+    }
+    await manejarVerCoincidencias(chatId, usuario);
     return;
   }
 

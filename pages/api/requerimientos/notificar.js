@@ -1,5 +1,9 @@
 import { supabaseAdmin } from '../../../lib/supabaseAdmin';
-import { buscarCoincidenciasParaRequerimiento, formatearResumenCoincidencias } from '../../../lib/matching';
+import {
+  buscarCoincidenciasParaRequerimiento,
+  criteriosDesdeRequerimiento,
+  formatearResumenCoincidencias,
+} from '../../../lib/matching';
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
@@ -43,15 +47,10 @@ export default async function handler(req, res) {
 
   const zonaIds = (zonasFilas || []).map((z) => z.zona_id);
 
-  const { inmuebles, referencias } = await buscarCoincidenciasParaRequerimiento(supabaseAdmin, {
-    tipoInmuebleId: requerimiento.tipo_inmueble_id,
-    tipoTransaccionId: requerimiento.tipo_transaccion_id,
-    zonaIds,
-    ubicacionReferencia: requerimiento.ubicacion_referencia,
-    presupuestoMin: requerimiento.presupuesto_min,
-    presupuestoMax: requerimiento.presupuesto_max,
-    dormitoriosMin: requerimiento.dormitorios_min,
-  });
+  const { inmuebles, referencias } = await buscarCoincidenciasParaRequerimiento(
+    supabaseAdmin,
+    criteriosDesdeRequerimiento(requerimiento, zonaIds)
+  );
 
   if (inmuebles.length + referencias.length > 0) {
     const { data: asesor } = await supabaseAdmin
