@@ -112,12 +112,39 @@ function construirEsquemaReferencia({ tiposInmueble, tiposTransaccion, zonas }) 
   };
 }
 
+// Telegram rechaza mensajes de más de 4096 caracteres (y el rechazo no se ve
+// desde el chat: el bot simplemente no responde). Un resumen con muchas
+// coincidencias lo supera fácil, así que se parte en varios mensajes cortando
+// entre líneas.
+const LARGO_MAXIMO_MENSAJE = 4000;
+
+function partirEnMensajes(texto) {
+  const partes = [];
+  let actual = '';
+  for (const linea of texto.split('\n')) {
+    const lineaSegura = linea.slice(0, LARGO_MAXIMO_MENSAJE);
+    if (actual && actual.length + 1 + lineaSegura.length > LARGO_MAXIMO_MENSAJE) {
+      partes.push(actual);
+      actual = lineaSegura;
+    } else {
+      actual = actual ? `${actual}\n${lineaSegura}` : lineaSegura;
+    }
+  }
+  if (actual) partes.push(actual);
+  return partes;
+}
+
 async function enviarMensaje(chatId, texto) {
-  await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text: texto }),
-  });
+  for (const parte of partirEnMensajes(texto)) {
+    const respuesta = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: parte }),
+    });
+    if (!respuesta.ok) {
+      console.error('Telegram rechazó el mensaje:', respuesta.status, await respuesta.text());
+    }
+  }
 }
 
 async function extraerDatosReferencia(texto, catalogos) {
