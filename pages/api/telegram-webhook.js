@@ -4,6 +4,7 @@ import {
   buscarRequerimientosCoincidentes,
   buscarCoincidenciasParaRequerimiento,
   formatearResumenCoincidencias,
+  formatearDetalleReferencia,
 } from '../../lib/matching';
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -408,9 +409,21 @@ async function procesarReferencia(usuario, chatId, mensaje) {
         .maybeSingle();
 
       if (asesor?.telegram_activo && asesor.telegram_chat_id) {
+        const detalle = formatearDetalleReferencia({
+          ubicacion: datos?.ubicacion || null,
+          descripcion: datos?.descripcion || texto.slice(0, 200),
+          contacto_nombre: datos?.contacto_nombre || null,
+          contacto_telefono: datos?.contacto_telefono || null,
+          cargado_por: { nombre: usuario.nombre, telefono: usuario.telefono },
+          tipo_transaccion: tipoTransaccionCatalogo ? { nombre: tipoTransaccionCatalogo.nombre } : null,
+          precio: datos?.precio || null,
+          moneda: datos?.moneda || null,
+          dimensiones: datos?.dimensiones || null,
+          dormitorios: datos?.dormitorios || null,
+        });
         await enviarMensaje(
           asesor.telegram_chat_id,
-          `🔔 Nueva referencia que podría coincidir con "${req.nombre_requerimiento}":\n\n${
+          `🔔 Nueva referencia que podría coincidir con "${req.nombre_requerimiento}":\n\n${detalle}\n\n${
             datos?.descripcion || texto.slice(0, 200)
           }`
         );
@@ -602,7 +615,7 @@ export default async function handler(req, res) {
   try {
     const { data: usuario } = await supabaseAdmin
       .from('usuarios')
-      .select('id, nombre, telegram_activo, telegram_acceso_hasta')
+      .select('id, nombre, telefono, telegram_activo, telegram_acceso_hasta')
       .eq('telegram_chat_id', chatId)
       .maybeSingle();
 

@@ -175,7 +175,7 @@ export default function EditarRequerimiento() {
                   {r.precio ? `${r.moneda === 'bob' ? 'Bs.' : '$us'} ${r.precio}` : 'precio no informado'}
                   <br />
                   <span style={{ fontSize: 13, color: '#555' }}>
-                    Contacto: {r.contacto_nombre || '—'}
+                    Captador: {r.contacto_nombre || '—'}
                     {r.contacto_telefono ? ` · ${r.contacto_telefono}` : ''}
                   </span>
                 </p>

@@ -176,7 +176,7 @@ export default function ReferenciasExternas() {
                 {r.dormitorios ? ` — ${r.dormitorios} dorm.` : ''}
               </p>
               <p style={{ margin: '4px 0 0', color: '#555', fontSize: 13 }}>
-                Contacto: {r.contacto_nombre || '—'}
+                Captador: {r.contacto_nombre || '—'}
                 {r.contacto_telefono ? ` (${r.contacto_telefono})` : ''}
               </p>
               <p style={{ margin: '4px 0 0', color: '#888', fontSize: 12 }}>
