@@ -7,6 +7,13 @@ import {
   formatearDetalleReferencia,
 } from '../../lib/matching';
 
+// Un mensaje puede encadenar varias llamadas a Claude (extracción de datos +
+// filtro de ubicación del matching). Con el límite por defecto de Vercel la
+// función se cortaba antes de responder y el bot quedaba en silencio.
+export const config = {
+  maxDuration: 60,
+};
+
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
 const RETENCION_DIAS_DEFECTO = 30; // fallback cuando no se identifica el tipo de transacción
