@@ -164,6 +164,12 @@ export default function EditarRequerimiento() {
                   🏠 <b>Propio:</b> {i.nombre || i.ubicacion || `Inmueble #${i.id}`} — $us {i.precio_venta ?? '—'}
                   <br />
                   <span style={{ fontSize: 13, color: '#555' }}>
+                    {i.tipo_inmueble_nombre || 'Tipo sin identificar'} ·{' '}
+                    {i.tipo_transaccion_nombre || 'transacción sin identificar'} · Zona:{' '}
+                    {i.zona_nombre || 'sin identificar'}
+                  </span>
+                  <br />
+                  <span style={{ fontSize: 13, color: '#555' }}>
                     Asesor: {i.captador?.nombre || '—'}
                     {i.captador?.telefono ? ` · ${i.captador.telefono}` : ''}
                   </span>
@@ -173,6 +179,12 @@ export default function EditarRequerimiento() {
                 <p key={`r-${r.id}`} style={{ margin: '8px 0' }}>
                   📲 <b>Referencia:</b> {r.ubicacion || r.descripcion?.slice(0, 60) || 'Sin ubicación'} —{' '}
                   {r.precio ? `${r.moneda === 'bob' ? 'Bs.' : '$us'} ${r.precio}` : 'precio no informado'}
+                  <br />
+                  <span style={{ fontSize: 13, color: '#555' }}>
+                    {r.tipo_inmueble_nombre || 'Tipo sin identificar'} ·{' '}
+                    {r.tipo_transaccion_nombre || 'transacción sin identificar'} · Zona:{' '}
+                    {r.zona_nombre || 'sin identificar'}
+                  </span>
                   <br />
                   <span style={{ fontSize: 13, color: '#555' }}>
                     Captador: {r.contacto_nombre || '—'}
