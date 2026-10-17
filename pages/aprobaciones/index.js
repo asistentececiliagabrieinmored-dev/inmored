@@ -67,7 +67,7 @@ export default function Aprobaciones() {
     return (
       <div>
         <div className="top-bar">
-          <h1>INMORED</h1>
+          <h1>InmoRed</h1>
         </div>
         <div className="container">
           <p>Esta sección es solo para el gerente de operaciones.</p>
@@ -82,7 +82,7 @@ export default function Aprobaciones() {
   return (
     <div>
       <div className="top-bar">
-        <h1>INMORED</h1>
+        <h1>InmoRed</h1>
         <a href="/inmuebles" className="logout-link" style={{ color: 'white' }}>
           Volver
         </a>

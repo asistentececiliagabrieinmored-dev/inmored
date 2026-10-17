@@ -210,7 +210,7 @@ export default function DetalleSolicitud() {
   return (
     <div>
       <div className="top-bar">
-        <h1>INMORED</h1>
+        <h1>InmoRed</h1>
         <a href="/aprobaciones" className="logout-link" style={{ color: 'white' }}>
           Volver
         </a>

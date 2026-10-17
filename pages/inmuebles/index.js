@@ -137,7 +137,7 @@ export default function Inmuebles() {
   return (
     <div>
       <div className="top-bar">
-        <h1>INMORED</h1>
+        <h1>InmoRed</h1>
         <div>
           <span style={{ marginRight: 16, fontSize: 13 }}>{usuarioEmail}</span>
           <span className="logout-link" onClick={handleLogout}>

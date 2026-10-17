@@ -139,7 +139,7 @@ export default function EditarReferencia() {
     return (
       <div>
         <div className="top-bar">
-          <h1>INMORED</h1>
+          <h1>InmoRed</h1>
         </div>
         <div className="container">
           <div className="success-box">
@@ -161,7 +161,7 @@ export default function EditarReferencia() {
   return (
     <div>
       <div className="top-bar">
-        <h1>INMORED</h1>
+        <h1>InmoRed</h1>
         <a href="/referencias" className="logout-link" style={{ color: 'white' }}>
           Volver
         </a>

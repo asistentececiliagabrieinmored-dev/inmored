@@ -221,7 +221,7 @@ export default function DetalleInmueble() {
   return (
     <div>
       <div className="top-bar">
-        <h1>INMORED</h1>
+        <h1>InmoRed</h1>
         <a href="/inmuebles" className="logout-link" style={{ color: 'white' }}>
           Volver
         </a>

@@ -145,7 +145,7 @@ export default function EditarRequerimiento() {
     return (
       <div>
         <div className="top-bar">
-          <h1>INMORED</h1>
+          <h1>InmoRed</h1>
         </div>
         <div className="container">
           <div className="success-box">
@@ -211,7 +211,7 @@ export default function EditarRequerimiento() {
   return (
     <div>
       <div className="top-bar">
-        <h1>INMORED</h1>
+        <h1>InmoRed</h1>
         <a href="/requerimientos" className="logout-link" style={{ color: 'white' }}>
           Volver
         </a>
