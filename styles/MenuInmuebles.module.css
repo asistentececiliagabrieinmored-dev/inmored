@@ -1,0 +1,99 @@
+/* Menú de íconos de la página Inmuebles (opción B de los mockups). */
+
+.menu {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.grupoCargar {
+  padding-left: 18px;
+  border-left: 1px solid #e3e8ed;
+}
+
+.grupoEtiqueta {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #4a5866;
+  text-transform: uppercase;
+}
+
+.iconos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.icono {
+  width: 104px;
+  height: 96px;
+  border-radius: 14px;
+  border: 1px solid #dce3e9;
+  background: #ffffff;
+  color: #06416a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.icono:hover {
+  background: #f0f5f9;
+}
+
+.iconoAccion,
+.iconoAccion:hover {
+  border-color: #06416a;
+  background: #06416a;
+  color: #ffffff;
+}
+
+.iconoAccion:hover {
+  background: #052f4e;
+}
+
+.iconoTexto {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.2;
+  padding: 0 6px;
+}
+
+/* Celular: grupos uno debajo del otro, grilla de 3 columnas. */
+@media (max-width: 760px) {
+  .menu {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .grupoCargar {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .iconos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .icono {
+    width: auto;
+    height: auto;
+    aspect-ratio: 1 / 1;
+  }
+}

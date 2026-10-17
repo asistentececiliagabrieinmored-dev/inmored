@@ -1,6 +1,40 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { supabase } from '../../lib/supabaseClient';
+import menu from '../../styles/MenuInmuebles.module.css';
+
+const SECCIONES = [
+  { nombre: 'Requerimientos', href: '/requerimientos', icono: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM21 21l-4.5-4.5' },
+  {
+    nombre: 'Referencias externas',
+    href: '/referencias',
+    icono: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
+  },
+  { nombre: 'Redes Sociales', href: '/redes-sociales', icono: 'M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15.5 9.5h.01' },
+  {
+    nombre: 'Aprobaciones',
+    href: '/aprobaciones',
+    icono: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM8 12l3 3 5-6',
+    soloGerente: true,
+  },
+];
+
+const CARGAS = [
+  {
+    nombre: 'Nueva solicitud',
+    href: '/inmuebles/nueva-solicitud',
+    icono: 'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M12 11v6M9 14h6',
+  },
+  { nombre: 'Carga histórica', href: '/inmuebles/carga-historica', icono: 'M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 7v5l3 2' },
+];
+
+function IconoMenu({ trazo }) {
+  return (
+    <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d={trazo} />
+    </svg>
+  );
+}
 
 export default function Inmuebles() {
   const router = useRouter();
@@ -113,31 +147,32 @@ export default function Inmuebles() {
       </div>
 
       <div className="container">
-        <div className="top-actions">
-          <h2 style={{ margin: 0 }}>Inmuebles</h2>
-          <div>
-            {rolNombre === 'gerente_operaciones' && (
-              <a href="/aprobaciones" className="btn-secondary">
-                Aprobaciones pendientes
-              </a>
-            )}
-            <a href="/requerimientos" className="btn-secondary">
-              Requerimientos
-            </a>
-            <a href="/referencias" className="btn-secondary">
-              Referencias externas
-            </a>
-            <a href="/redes-sociales" className="btn-secondary">
-              Redes Sociales
-            </a>
-            <a href="/inmuebles/carga-historica" className="btn-secondary">
-              Cargar inmueble histórico
-            </a>
-            <a href="/inmuebles/nueva-solicitud" className="btn-secondary">
-              + Nueva solicitud de captación
-            </a>
+        <h2 style={{ marginTop: 0 }}>Inmuebles</h2>
+
+        <nav className={menu.menu} aria-label="Menú principal">
+          <div className={menu.grupo}>
+            <div className={menu.grupoEtiqueta}>Secciones</div>
+            <div className={menu.iconos}>
+              {SECCIONES.filter((s) => !s.soloGerente || rolNombre === 'gerente_operaciones').map((s) => (
+                <a key={s.href} href={s.href} className={menu.icono}>
+                  <IconoMenu trazo={s.icono} />
+                  <span className={menu.iconoTexto}>{s.nombre}</span>
+                </a>
+              ))}
+            </div>
           </div>
-        </div>
+          <div className={`${menu.grupo} ${menu.grupoCargar}`}>
+            <div className={menu.grupoEtiqueta}>Cargar</div>
+            <div className={menu.iconos}>
+              {CARGAS.map((c) => (
+                <a key={c.href} href={c.href} className={`${menu.icono} ${menu.iconoAccion}`}>
+                  <IconoMenu trazo={c.icono} />
+                  <span className={menu.iconoTexto}>{c.nombre}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </nav>
 
         <div className="card">
           <h3 style={{ color: '#06416A', marginTop: 0 }}>Filtros</h3>
