@@ -127,6 +127,9 @@ export default function Inmuebles() {
             <a href="/referencias" className="btn-secondary">
               Referencias externas
             </a>
+            <a href="/redes-sociales" className="btn-secondary">
+              Redes Sociales
+            </a>
             <a href="/inmuebles/carga-historica" className="btn-secondary">
               Cargar inmueble histórico
             </a>

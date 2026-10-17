@@ -34,12 +34,16 @@ InmoRed es una plataforma de gestión inmobiliaria para una agencia pequeña en 
 - `pages/requerimientos/index.js` — listado de requerimientos (búsquedas activas de clientes), con filtro por estado y botones para editar/cerrar/eliminar
 - `pages/requerimientos/nueva.js` — formulario para cargar un requerimiento nuevo; al guardar, busca coincidencias de inmediato (inmuebles propios primero, después referencias externas) y las muestra en pantalla
 - `pages/requerimientos/[id].js` — edición de un requerimiento existente (solo desde la web, no desde el bot); al guardar, vuelve a correr el matching y muestra las coincidencias actualizadas
+- `pages/redes-sociales/index.js` — sección "Redes Sociales": banco de material (artes, fotos y copy) para que los asesores armen sus publicaciones. Carrusel por inmueble (artes primero, el primero es la carátula; después fotos), descargar imagen, copiar copy, filtros por transacción y tipo. Disponibles primero, del más reciente al más antiguo. Si un inmueble está "No disponible", se inhabilitan descargar y copiar. El gerente ve un interruptor para cambiar el estado.
+- `pages/redes-sociales/nuevo.js` y `pages/redes-sociales/[id].js` — alta y edición (comparten `components/FormularioMaterialRedes.js`). Edita solo quien lo cargó o el gerente.
 - `pages/api/telegram-webhook.js` — webhook del bot de Telegram (activación + parsing de referencias externas con Claude Haiku + aviso automático a asesores con requerimientos coincidentes)
 - `pages/api/requerimientos/notificar.js` — dado un `requerimientoId`, busca coincidencias y avisa por Telegram al asesor dueño si tiene el bot activado
 - `lib/supabaseClient.js` — instancia única del cliente de Supabase
 - `lib/supabaseAdmin.js` — cliente de Supabase con la Service Role Key, para rutas de servidor sin sesión de usuario (el webhook del bot)
 - `lib/matching.js` — lógica de cruce compartida entre requerimientos, inmuebles propios y referencias externas
 - `lib/useUsuarioActual.js` — hook que trae la sesión activa y el rol del usuario desde la tabla `usuarios`
+
+**Sección Redes Sociales (independiente de `inmuebles`):** tablas `material_redes` y `material_redes_imagenes` (`supabase/redes_sociales.sql`, corrido el 2026-10-16). No lee ni escribe la tabla `inmuebles`: solo contiene lo que se carga desde esa sección. Imágenes en el bucket público `documentos` (carpeta `material-redes/`). Reglas en la base de datos: todos ven y cargan; editan autor o gerente; solo el gerente cambia `disponible` (trigger). Funciones auxiliares `usuario_actual_id()` y `es_gerente_operaciones()`. Usa su propio estilo (`styles/RedesSociales.module.css`, tipografía Manrope) basado en los mockups aprobados por Romano. ⚠️ No confundir con la tabla `publicaciones_redes`, que ya existía (vacía, sin uso en el código) y es otra cosa: registro de en qué red se publicó un inmueble.
 
 ## Roles
 

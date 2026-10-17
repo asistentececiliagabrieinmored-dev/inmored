@@ -1,0 +1,695 @@
+/* Estilos de la sección Redes Sociales (según los mockups aprobados).
+   Es un CSS module: solo afecta a las páginas que lo importan. */
+
+.pagina {
+  min-height: 100vh;
+  background: #eef2f5;
+  color: #17232e;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.pagina button,
+.pagina input,
+.pagina select,
+.pagina textarea {
+  font-family: inherit;
+}
+
+/* ---------- Barra superior ---------- */
+
+.barra {
+  background: #06416a;
+  color: #ffffff;
+}
+
+.barraInterior {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 16px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.marca {
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.2px;
+}
+
+.barraLink {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.barraLink:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* ---------- Contenido ---------- */
+
+.contenido {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.contenidoAngosto {
+  max-width: 640px;
+}
+
+.titulo {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: #06416a;
+  letter-spacing: -0.3px;
+}
+
+.subtitulo {
+  font-size: 13px;
+  color: #4a5866;
+  margin-top: 4px;
+}
+
+/* ---------- Filtros ---------- */
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px 24px;
+}
+
+.filtroGrupo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filtroEtiqueta {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #4a5866;
+  text-transform: uppercase;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  width: auto;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 18px;
+  border: 1px solid #c5d0da;
+  background: #ffffff;
+  color: #17232e;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chip:hover {
+  background: #f0f5f9;
+}
+
+.chipActivo,
+.chipActivo:hover {
+  border-color: #06416a;
+  background: #06416a;
+  color: #ffffff;
+}
+
+.btnPrimario {
+  width: auto;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 0;
+  background: #06416a;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  margin-left: auto;
+}
+
+.btnPrimario:hover {
+  background: #052f4e;
+}
+
+/* ---------- Grilla de tarjetas ---------- */
+
+.grilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.tarjeta {
+  background: #ffffff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(6, 65, 106, 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Carrusel ---------- */
+
+.carrusel {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: #dfe7ee;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.carruselImagen {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.carruselVacio {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a5866;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.apagado {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+.etiquetaImagen,
+.contador {
+  position: absolute;
+  top: 12px;
+  background: rgba(10, 22, 32, 0.72);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 12px;
+}
+
+.etiquetaImagen {
+  left: 12px;
+}
+
+.contador {
+  right: 12px;
+}
+
+.flecha {
+  position: absolute;
+  top: calc(50% - 22px);
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 22px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.92);
+  color: #06416a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flecha:hover {
+  background: #ffffff;
+}
+
+.flechaIzquierda {
+  left: 8px;
+}
+
+.flechaDerecha {
+  right: 8px;
+}
+
+.btnDescargar {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: auto;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 20px;
+  border: 0;
+  background: #ffffff;
+  color: #06416a;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+}
+
+.btnDescargar:hover {
+  background: #f0f5f9;
+}
+
+.btnDescargar:disabled,
+.btnDescargar:disabled:hover {
+  background: #e5e9ed;
+  color: #6b7884;
+  cursor: not-allowed;
+}
+
+.puntos {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 14px 0;
+}
+
+.punto {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: #c5d0da;
+}
+
+.punto:hover {
+  background: #9fb2c3;
+}
+
+.puntoActivo,
+.puntoActivo:hover {
+  width: 20px;
+  background: #06416a;
+}
+
+/* ---------- Cuerpo de la tarjeta ---------- */
+
+.cuerpo {
+  padding: 12px 14px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.filaEstado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 4px;
+  background: currentColor;
+}
+
+.badgeDisponible {
+  background: #e1f1e6;
+  color: #1c6434;
+}
+
+.badgeNoDisponible {
+  background: #f6e4da;
+  color: #8a3410;
+}
+
+.btnChico {
+  width: auto;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid #c5d0da;
+  background: #ffffff;
+  color: #06416a;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-decoration: none;
+}
+
+.btnChico:hover {
+  background: #f0f5f9;
+}
+
+.btnChico:disabled,
+.btnChico:disabled:hover {
+  background: #eef1f4;
+  border-color: #dce3e9;
+  color: #6b7884;
+  cursor: not-allowed;
+}
+
+.nombre {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #06416a;
+}
+
+.detalle {
+  font-size: 13px;
+  color: #4a5866;
+}
+
+.precio {
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+/* ---------- Copy ---------- */
+
+.copyCaja {
+  margin: 10px 14px 14px;
+  background: #f4f7fa;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.copyFila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.copyEtiqueta {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #4a5866;
+  text-transform: uppercase;
+}
+
+.copyTexto {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.copyTextoApagado {
+  color: #6b7884;
+}
+
+/* ---------- Interruptor del gerente ---------- */
+
+.gerenteFila {
+  margin: 0 14px 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e3e8ed;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gerenteTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.gerenteAyuda {
+  font-size: 11px;
+  font-weight: 500;
+  color: #4a5866;
+}
+
+.interruptor {
+  width: 52px;
+  height: 30px;
+  padding: 3px;
+  border-radius: 15px;
+  border: 0;
+  display: flex;
+  background: #a7b3be;
+  justify-content: flex-start;
+}
+
+.interruptor:hover {
+  background: #96a3af;
+}
+
+.interruptorEncendido,
+.interruptorEncendido:hover {
+  background: #1c6434;
+  justify-content: flex-end;
+}
+
+.interruptor:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.interruptorPerilla {
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+/* ---------- Formulario ---------- */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.seccion {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.seccionTitulo {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #06416a;
+  text-transform: uppercase;
+}
+
+.ayuda {
+  margin: -10px 0 0;
+  font-size: 12px;
+  color: #4a5866;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #17232e;
+  margin: 0;
+}
+
+.control {
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #c5d0da;
+  background: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  color: #17232e;
+}
+
+textarea.control {
+  height: auto;
+  min-height: 140px;
+  padding: 10px 12px;
+  line-height: 1.5;
+}
+
+.filaDos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.filaMoneda {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.galeria {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.miniatura {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #dfe7ee;
+}
+
+.miniatura img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.etiquetaCaratula {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  background: #ffffff;
+  color: #06416a;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.miniaturaAcciones {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 4px;
+  background: linear-gradient(transparent, rgba(10, 22, 32, 0.6));
+}
+
+.miniBoton {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 15px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.92);
+  color: #06416a;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.miniBoton:hover {
+  background: #ffffff;
+}
+
+.miniBoton:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.agregarArchivo {
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  border: 2px dashed #9fb2c3;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #06416a;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  margin: 0;
+}
+
+.agregarArchivo:hover {
+  background: #eef4f9;
+}
+
+.btnGuardar {
+  height: 52px;
+  border-radius: 12px;
+  border: 0;
+  background: #06416a;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.btnGuardar:hover {
+  background: #052f4e;
+}
+
+.btnGuardar:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.error {
+  margin: 0;
+  color: #b3261e;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mensaje {
+  color: #4a5866;
+  font-size: 14px;
+}
