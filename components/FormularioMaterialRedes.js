@@ -23,6 +23,9 @@ export default function FormularioMaterialRedes({ materialId }) {
   const [moneda, setMoneda] = useState('usd');
   const [precio, setPrecio] = useState('');
   const [copy, setCopy] = useState('');
+  const [captacionInmored, setCaptacionInmored] = useState(true);
+  const [captadorNombre, setCaptadorNombre] = useState('');
+  const [captadorTelefono, setCaptadorTelefono] = useState('');
 
   // Cada ítem: { clave, id?, url, ruta_storage?, archivo? }.
   // Los que tienen "archivo" son nuevos y se suben al guardar.
@@ -56,6 +59,7 @@ export default function FormularioMaterialRedes({ materialId }) {
       .from('material_redes')
       .select(
         `id, nombre, tipo_transaccion_id, tipo_inmueble_id, zona_id, moneda, precio, copy,
+         captacion_inmored, captador_nombre, captador_telefono,
          imagenes:material_redes_imagenes(id, tipo, url, ruta_storage, orden)`
       )
       .eq('id', materialId)
@@ -74,6 +78,9 @@ export default function FormularioMaterialRedes({ materialId }) {
     setMoneda(data.moneda || 'usd');
     setPrecio(data.precio != null ? String(data.precio) : '');
     setCopy(data.copy || '');
+    setCaptacionInmored(data.captacion_inmored !== false);
+    setCaptadorNombre(data.captador_nombre || '');
+    setCaptadorTelefono(data.captador_telefono || '');
 
     const imagenes = (data.imagenes || []).sort((a, b) => a.orden - b.orden);
     const aItem = (img) => ({ clave: `db-${img.id}`, id: img.id, url: img.url, ruta_storage: img.ruta_storage });
@@ -150,6 +157,10 @@ export default function FormularioMaterialRedes({ materialId }) {
       setError('El nombre del inmueble es obligatorio.');
       return;
     }
+    if (!captadorNombre.trim() || !captadorTelefono.trim()) {
+      setError('El nombre y el teléfono del captador son obligatorios.');
+      return;
+    }
 
     setGuardando(true);
     try {
@@ -161,6 +172,9 @@ export default function FormularioMaterialRedes({ materialId }) {
         moneda,
         precio: precio.trim() ? Number(precio.replace(/[^\d.]/g, '')) : null,
         copy: copy.trim() || null,
+        captacion_inmored: captacionInmored,
+        captador_nombre: captadorNombre.trim(),
+        captador_telefono: captadorTelefono.trim(),
       };
 
       let id = materialId;
@@ -316,6 +330,48 @@ export default function FormularioMaterialRedes({ materialId }) {
               placeholder="0"
               value={precio}
               onChange={(e) => setPrecio(e.target.value)}
+            />
+          </label>
+        </div>
+      </section>
+
+      <section className={estilos.seccion}>
+        <h2 className={estilos.seccionTitulo}>Captación</h2>
+        <div className={estilos.selector} role="radiogroup" aria-label="¿De quién es la captación?">
+          {[
+            { valor: true, texto: 'InmoRed' },
+            { valor: false, texto: 'Externa' },
+          ].map((o) => (
+            <button
+              key={o.texto}
+              type="button"
+              role="radio"
+              aria-checked={captacionInmored === o.valor}
+              className={`${estilos.selectorOpcion} ${captacionInmored === o.valor ? estilos.selectorActivo : ''}`}
+              onClick={() => setCaptacionInmored(o.valor)}
+            >
+              {o.texto}
+            </button>
+          ))}
+        </div>
+        <p className={estilos.ayuda}>
+          {captacionInmored
+            ? 'Captado por un asesor de InmoRed.'
+            : 'Captado por otra inmobiliaria o por un asesor externo.'}
+        </p>
+        <div className={estilos.filaDos}>
+          <label className={estilos.campo}>
+            Nombre del captador
+            <input className={estilos.control} type="text" value={captadorNombre} onChange={(e) => setCaptadorNombre(e.target.value)} />
+          </label>
+          <label className={estilos.campo}>
+            Teléfono del captador
+            <input
+              className={estilos.control}
+              type="tel"
+              inputMode="tel"
+              value={captadorTelefono}
+              onChange={(e) => setCaptadorTelefono(e.target.value)}
             />
           </label>
         </div>

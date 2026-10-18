@@ -359,6 +359,54 @@
   color: #8a3410;
 }
 
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Captación de otra inmobiliaria o asesor externo. */
+.badgeExterna {
+  background: #fbeccb;
+  color: #7a4d00;
+}
+
+/* Sello sobre la foto en captaciones InmoRed: logo completo, sin alterar
+   (manual de marca: mínimo digital 25 px de alto). */
+.sello {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 6px 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  display: flex;
+}
+
+.sello img {
+  display: block;
+  height: 40px;
+  width: auto;
+}
+
+.captador {
+  font-size: 13px;
+  color: #4a5866;
+  margin-top: 4px;
+}
+
+.captador strong {
+  color: #17232e;
+  font-weight: 700;
+}
+
+.captador a {
+  color: #06416a;
+  font-weight: 700;
+  text-decoration: none;
+}
+
 .btnChico {
   width: auto;
   height: 32px;
@@ -526,6 +574,38 @@
   letter-spacing: 1px;
   color: #06416a;
   text-transform: uppercase;
+}
+
+/* Selector de dos opciones (captación InmoRed / Externa). */
+.selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid #c5d0da;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.selectorOpcion {
+  width: auto;
+  height: 44px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: #ffffff;
+  color: #4a5866;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.selectorOpcion:hover {
+  background: #f0f5f9;
+}
+
+.selectorActivo,
+.selectorActivo:hover {
+  background: #06416a;
+  color: #ffffff;
 }
 
 .ayuda {

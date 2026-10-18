@@ -17,6 +17,7 @@ export default function RedesSociales() {
   const [tiposTransaccion, setTiposTransaccion] = useState([]);
   const [filtroTransaccionId, setFiltroTransaccionId] = useState('');
   const [filtroTipoId, setFiltroTipoId] = useState('');
+  const [filtroCaptacion, setFiltroCaptacion] = useState('');
 
   const [materiales, setMateriales] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -34,7 +35,7 @@ export default function RedesSociales() {
   useEffect(() => {
     if (cargandoUsuario || !sesion) return;
     cargarMateriales();
-  }, [cargandoUsuario, sesion, filtroTransaccionId, filtroTipoId]);
+  }, [cargandoUsuario, sesion, filtroTransaccionId, filtroTipoId, filtroCaptacion]);
 
   async function cargarCatalogos() {
     const [{ data: tiposInm }, { data: tiposTrans }] = await Promise.all([
@@ -52,6 +53,7 @@ export default function RedesSociales() {
       .from('material_redes')
       .select(
         `id, nombre, moneda, precio, copy, disponible, cargado_por_usuario_id, fecha_creacion,
+         captacion_inmored, captador_nombre, captador_telefono,
          tipo_inmueble:tipos_inmueble(nombre),
          tipo_transaccion:tipos_transaccion(nombre),
          zona:zonas(nombre),
@@ -62,6 +64,7 @@ export default function RedesSociales() {
 
     if (filtroTransaccionId) query = query.eq('tipo_transaccion_id', filtroTransaccionId);
     if (filtroTipoId) query = query.eq('tipo_inmueble_id', filtroTipoId);
+    if (filtroCaptacion) query = query.eq('captacion_inmored', filtroCaptacion === 'inmored');
 
     const { data, error: errorCarga } = await query;
     if (errorCarga) setError(errorCarga.message);
@@ -138,6 +141,18 @@ export default function RedesSociales() {
           <div className={estilos.filtroGrupo}>
             <div className={estilos.filtroEtiqueta}>Tipo de inmueble</div>
             {renderChips(tiposInmueble, filtroTipoId, setFiltroTipoId, 'Todos')}
+          </div>
+          <div className={estilos.filtroGrupo}>
+            <div className={estilos.filtroEtiqueta}>Captación</div>
+            {renderChips(
+              [
+                { id: 'inmored', nombre: 'InmoRed' },
+                { id: 'externa', nombre: 'Externas' },
+              ],
+              filtroCaptacion,
+              setFiltroCaptacion,
+              'Todas'
+            )}
           </div>
           <a href="/redes-sociales/nuevo" className={estilos.btnPrimario}>
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -271,6 +286,11 @@ function TarjetaMaterial({ material, esGerente, puedeEditar, onCambiarDisponible
         )}
 
         {actual && <div className={estilos.etiquetaImagen}>{actual.etiqueta}</div>}
+        {material.captacion_inmored && (
+          <div className={estilos.sello}>
+            <img src="/logo-inmored.svg" alt="Captación InmoRed" />
+          </div>
+        )}
         {hayVarias && (
           <div className={estilos.contador}>
             {indice + 1} / {imagenes.length}
@@ -322,9 +342,12 @@ function TarjetaMaterial({ material, esGerente, puedeEditar, onCambiarDisponible
 
       <div className={estilos.cuerpo}>
         <div className={estilos.filaEstado}>
-          <span className={`${estilos.badge} ${disponible ? estilos.badgeDisponible : estilos.badgeNoDisponible}`}>
-            {disponible ? 'Disponible' : 'No disponible'}
-          </span>
+          <div className={estilos.badges}>
+            <span className={`${estilos.badge} ${disponible ? estilos.badgeDisponible : estilos.badgeNoDisponible}`}>
+              {disponible ? 'Disponible' : 'No disponible'}
+            </span>
+            {!material.captacion_inmored && <span className={`${estilos.badge} ${estilos.badgeExterna}`}>Externa</span>}
+          </div>
           {puedeEditar && (
             <a href={`/redes-sociales/${material.id}`} className={estilos.btnChico}>
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -337,6 +360,17 @@ function TarjetaMaterial({ material, esGerente, puedeEditar, onCambiarDisponible
         <h2 className={estilos.nombre}>{material.nombre}</h2>
         {detalle && <div className={estilos.detalle}>{detalle}</div>}
         {precio && <div className={estilos.precio}>{precio}</div>}
+        {material.captador_nombre && (
+          <div className={estilos.captador}>
+            Captó: <strong>{material.captador_nombre}</strong>
+            {material.captador_telefono && (
+              <>
+                {' · '}
+                <a href={`tel:${material.captador_telefono.replace(/[^\d+]/g, '')}`}>{material.captador_telefono}</a>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {material.copy && (
